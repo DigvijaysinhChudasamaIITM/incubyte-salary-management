@@ -1,0 +1,81 @@
+# AI-Assisted Development Log
+
+Incubyte explicitly encourages the use of AI tools during this assessment.
+
+AI is being used as an engineering accelerator and review partner rather than as an unquestioned code generator.
+
+Every AI-assisted decision or implementation remains subject to human review, automated testing, and manual verification.
+
+## Entry 001 — Requirement Analysis
+
+**Purpose**
+
+Review the assessment from the perspectives of product ambiguity, engineering risk, testability, and maintainability.
+
+**AI Assistance**
+
+AI was used to:
+
+* extract explicit requirements;
+* distinguish requirements from assumptions;
+* identify ambiguous product behaviour;
+* identify potential financial-domain edge cases;
+* generate candidate clarification questions;
+* challenge unnecessary architecture.
+
+**Human Decision**
+
+Only four clarification questions were sent to Incubyte.
+
+Questions about framework choice, database technology, UI libraries, test-coverage percentages, deployment provider, and other normal engineering decisions were deliberately not sent because those decisions should be owned by the candidate.
+
+---
+
+## Entry 002 — Scope Challenge
+
+**AI Suggestion Reviewed**
+
+Potential features considered included authentication, salary history, advanced analytics, bulk import/export, and natural-language salary querying.
+
+**Human Decision**
+
+Only functionality justified by the problem statement will be included in the mandatory scope.
+
+Features that materially depend on unanswered product requirements remain deferred until clarification is received.
+
+In particular, no LLM-based product capability will be implemented simply to demonstrate AI experience.
+
+---
+
+## Entry 003 — Financial Data Review
+
+**AI Assistance**
+
+AI highlighted risks associated with:
+
+* floating-point salary values;
+* aggregating compensation across currencies;
+* validation of negative or malformed salary values;
+* duplicate updates;
+* database constraints.
+
+**Human Decision**
+
+Salary values will use decimal-safe representations.
+
+Cross-currency aggregation remains pending clarification rather than silently applying an arbitrary conversion policy.
+
+---
+
+## Verification Principle
+
+AI-generated suggestions are not considered correct merely because they were generated.
+
+For implementation work:
+
+1. behaviour is defined;
+2. tests are written where appropriate;
+3. code is implemented;
+4. tests and quality checks are executed;
+5. results are manually reviewed;
+6. only verified behaviour is treated as complete.
