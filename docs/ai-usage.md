@@ -155,3 +155,28 @@ rejected as outside the current slice.
 
 The interface was verified with Vitest interaction tests, ESLint, TypeScript compilation, a Vite
 production build, and a manual smoke test through the development proxy against the seeded API.
+
+---
+
+## Entry 007 - Continuous Integration
+
+**Problem**
+
+Run the established backend and frontend quality gates consistently for every push and pull
+request, and confirm that repository setup works without relying on an existing workstation.
+
+**AI Assistance**
+
+AI reviewed the current commands, checked maintained GitHub Action major versions, proposed two
+parallel jobs, and audited the README as a literal fresh-checkout procedure.
+
+**Human Decision**
+
+CI uses Python 3.11 and Node 22 without Docker or dependency caching. Backend and frontend checks
+remain separate for clear failures. The README now creates a virtual environment and performs
+migration and seeding before service startup.
+
+**Verification**
+
+The workflow commands were run locally, and the README procedure was repeated from an isolated
+checkout through dependency installation, migration, seeding, tests, lint, and frontend build.

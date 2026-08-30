@@ -41,3 +41,9 @@ checks pass.
 Migration-backed slices must also be applied to a fresh database and checked for
 schema drift. Seed changes must prove both the expected record count and safe repeat
 behaviour outside the unit-test fixture.
+
+## Continuous Integration
+
+GitHub Actions runs backend Ruff and pytest checks plus frontend Vitest, ESLint, and
+production-build checks on every push and pull request. The backend and frontend run as
+independent jobs so failures remain easy to locate and both stacks can execute in parallel.

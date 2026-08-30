@@ -17,12 +17,46 @@ is pending.
 - Python 3.10 or newer
 - Node.js 22 or newer
 
-## Quality baseline
+## Local setup
 
-Run the backend checks from `backend`:
+Create the backend environment and install dependencies:
 
 ```shell
+cd backend
+python -m venv .venv
+```
+
+Activate it with `source .venv/bin/activate` on macOS/Linux or
+`.\.venv\Scripts\Activate.ps1` in Windows PowerShell, then run:
+
+```shell
+python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
+alembic upgrade head
+python -m salary_management.seed
+uvicorn salary_management.main:app --reload
+```
+
+The migration and seed commands use `DATABASE_URL` when set and otherwise use
+`sqlite:///./salary_management.db`. Repeating the seed is a safe no-op when the complete
+seed dataset exists; partial or unrelated employee data causes an explicit error.
+
+In a second terminal, install and start the frontend:
+
+```shell
+cd frontend
+npm ci
+npm run dev
+```
+
+Open `http://localhost:5173`. During local development, Vite proxies `/api` requests
+to the backend at `http://127.0.0.1:8000`.
+
+## Quality checks
+
+Run the backend checks from `backend` with the virtual environment active:
+
+```shell
 ruff check .
 pytest
 ```
@@ -30,30 +64,10 @@ pytest
 Run the frontend checks from `frontend`:
 
 ```shell
-npm install
-npm run lint
 npm test
+npm run lint
 npm run build
 ```
-
-Start the development services with `uvicorn salary_management.main:app --reload`
-from `backend` and `npm run dev` from `frontend`. Open `http://localhost:5173` to use
-the employee browsing interface. During local development, Vite proxies `/api` requests
-to the backend at `http://127.0.0.1:8000`.
-
-## Database and seed data
-
-From `backend`, create or update the local SQLite database and seed the deterministic
-10,000-employee dataset:
-
-```shell
-alembic upgrade head
-python -m salary_management.seed
-```
-
-Both commands use `DATABASE_URL` when set and otherwise use
-`sqlite:///./salary_management.db`. Repeating the seed is a safe no-op when the complete
-seed dataset exists; partial or unrelated employee data causes an explicit error.
 
 Browse employees at `GET /api/employees`. The endpoint accepts `page`, `page_size` (up to
 100), `search`, `country`, and `department` query parameters. Search matches employee code,
