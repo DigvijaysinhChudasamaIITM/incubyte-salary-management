@@ -104,3 +104,28 @@ minimum supported local runtime after inspection showed that Python 3.11 was una
 
 Ruff and pytest were run for the backend. ESLint, Vitest, and a TypeScript/Vite production
 build were run for the frontend. Dependency installation reported no known vulnerabilities.
+
+---
+
+## Entry 005 - Employee Browsing Foundation
+
+**Problem**
+
+Add relational employee data, deterministic assessment data, and scalable browsing without
+deciding any compensation-history, currency-conversion, authentication, or AI behavior.
+
+**AI Assistance**
+
+AI proposed the database constraints, SQL-backed pagination/search/filter flow, migration,
+seed generation strategy, and behavior-focused repository/service/API test cases.
+
+**Human Decision**
+
+The model was kept deliberately small. Salary uses `Decimal`/`NUMERIC(14,2)`. Seed reruns
+no-op only for a complete deterministic dataset and reject partial data. Broader compensation
+features remain deferred pending Incubyte's answers.
+
+**Verification**
+
+The slice is verified through repository, database-constraint, migration, seed, and API tests,
+plus fresh-database migration and two-run 10,000-employee seed checks.

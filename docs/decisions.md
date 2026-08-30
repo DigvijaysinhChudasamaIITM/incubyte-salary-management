@@ -71,7 +71,9 @@ Use a relational database for employee and compensation data.
 
 Employee and compensation information is naturally structured and benefits from schema constraints, indexes, transactional updates, and deterministic querying.
 
-The final database choice will be confirmed during environment/deployment setup.
+SQLite is used for local development and automated tests, with the connection URL supplied
+through `DATABASE_URL`. SQLAlchemy and Alembic keep the persistence layer portable to a
+PostgreSQL-compatible deployment database without adding local infrastructure.
 
 ---
 
@@ -86,6 +88,11 @@ Salary values will use decimal/numeric financial representations.
 ### Reason
 
 Binary floating-point arithmetic can introduce representation and rounding errors and is inappropriate for compensation data.
+
+The initial database also requires salary amount to be greater than zero. This is a pragmatic
+data-integrity assumption rather than an Incubyte-specified business rule. It will be revisited
+only if later requirements make zero-value compensation a material valid case; it does not by
+itself justify an additional clarification request.
 
 ---
 
@@ -116,6 +123,23 @@ Do not add an LLM, RAG system, vector database, or conversational interface mere
 The assessment explicitly requires intentional use of AI during software development but does not explicitly require the resulting product to contain AI functionality.
 
 If Incubyte confirms that natural-language salary querying is required, this decision will be revisited.
+
+---
+
+## D008 - Deterministic Seed Safety
+
+**Status:** Accepted
+
+### Decision
+
+Generate a fixed set of employee codes `EMP00001` through `EMP10000`. A repeat seed is a
+no-op only when all 10,000 deterministic employee codes are present. Any partial or unrelated
+employee dataset blocks seeding with an explicit error.
+
+### Reason
+
+This makes normal repeat execution idempotent while preventing the seed command from silently
+mixing generated assessment data into an ambiguous existing dataset.
 
 ---
 

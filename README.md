@@ -38,3 +38,21 @@ npm run build
 
 Start the development services with `uvicorn salary_management.main:app --reload`
 from `backend` and `npm run dev` from `frontend`.
+
+## Database and seed data
+
+From `backend`, create or update the local SQLite database and seed the deterministic
+10,000-employee dataset:
+
+```shell
+alembic upgrade head
+python -m salary_management.seed
+```
+
+Both commands use `DATABASE_URL` when set and otherwise use
+`sqlite:///./salary_management.db`. Repeating the seed is a safe no-op when the complete
+seed dataset exists; partial or unrelated employee data causes an explicit error.
+
+Browse employees at `GET /api/employees`. The endpoint accepts `page`, `page_size` (up to
+100), `search`, `country`, and `department` query parameters. Search matches employee code,
+name, and email.
