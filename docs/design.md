@@ -13,6 +13,7 @@ flowchart LR
     Repository --> DB[(Relational database)]
     Alembic[Alembic migrations] --> DB
     Seed[Deterministic seed command] --> DB
+    Probe[Deployment readiness probe] -->|SELECT 1| DB
 ```
 
 Employee browsing follows a small modular-monolith flow:
@@ -23,10 +24,12 @@ Employee browsing follows a small modular-monolith flow:
 4. The repository builds the filtered count and bounded employee query.
 5. SQLAlchemy executes both queries against relational persistence.
 
-The browser uses relative `/api` URLs. Vite proxies those requests to FastAPI during local
-development, while deployment can serve both applications behind one origin. In-flight requests
-are cancelled when the query changes, and controls are disabled until the replacement page is
-resolved. API salary strings are grouped for display without conversion to JavaScript numbers.
+The browser uses relative `/api` URLs by default. Vite proxies those requests to FastAPI during
+local development, and the same URLs support a production reverse proxy under one origin. A
+split-origin build can embed the backend origin through `VITE_API_BASE_URL`; the backend then
+allows only explicitly configured `CORS_ALLOWED_ORIGINS`. In-flight requests are cancelled when
+the query changes, and controls are disabled until the replacement page is resolved. API salary
+strings are grouped for display without conversion to JavaScript numbers.
 
 ## Backend Boundaries
 
@@ -81,7 +84,22 @@ causes an explicit error instead of being mixed silently with generated data.
 
 SQLite keeps local setup and tests lightweight. The connection comes from `DATABASE_URL`, while
 SQLAlchemy models and Alembic migrations provide a path to a PostgreSQL-compatible deployment
-database. PostgreSQL execution remains to be verified when deployment infrastructure is chosen.
+database. Common provider forms (`postgres://` and `postgresql://`) are normalized to SQLAlchemy's
+installed Psycopg 3 driver form. Both the application and Alembic use the same normalization.
+
+Migrations and deterministic seeding are explicit operational commands; neither runs during API
+startup. This prevents web-process restarts or horizontal scaling from mutating production data.
+`/health` reports process liveness, while `/ready` executes a minimal database query and returns
+`503` with a generic response when persistence is unavailable.
+
+## Deployment Topology
+
+The preferred initial topology is a built React application and FastAPI service exposed through
+one public origin, with `/api`, `/health`, and `/ready` routed to FastAPI. This avoids browser CORS
+configuration. Separate frontend and API origins are also supported through the paired build-time
+frontend API origin and runtime backend origin allowlist. Hosting remains provider-neutral; TLS,
+secrets, PostgreSQL lifecycle, static asset delivery, and release-command execution belong to the
+selected platform.
 
 ## Pending Product Decisions
 

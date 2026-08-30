@@ -25,6 +25,12 @@ export interface EmployeeQuery {
   department: string;
 }
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
+
+export function employeeApiUrl(parameters: URLSearchParams, baseUrl = apiBaseUrl): string {
+  return `${baseUrl.replace(/\/+$/, "")}/api/employees?${parameters}`;
+}
+
 export async function fetchEmployees(
   query: EmployeeQuery,
   signal?: AbortSignal,
@@ -37,7 +43,7 @@ export async function fetchEmployees(
   if (query.country) parameters.set("country", query.country);
   if (query.department) parameters.set("department", query.department);
 
-  const response = await fetch(`/api/employees?${parameters}`, { signal });
+  const response = await fetch(employeeApiUrl(parameters), { signal });
   if (!response.ok) {
     throw new Error(`Employee request failed with status ${response.status}`);
   }

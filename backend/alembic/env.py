@@ -3,11 +3,12 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from salary_management.persistence.database import Base, database_url
+from salary_management.config import database_url
+from salary_management.persistence.database import Base
 from salary_management.persistence.models import Employee  # noqa: F401
 
 config = context.config
-config.set_main_option("sqlalchemy.url", database_url())
+config.set_main_option("sqlalchemy.url", database_url().replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

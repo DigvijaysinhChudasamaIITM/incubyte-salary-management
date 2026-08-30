@@ -11,6 +11,8 @@ than added only at the end.
 - Repository tests for stable pagination, search, and combined filters
 - Service tests for input normalization and pagination metadata
 - API tests for request validation and response contracts
+- Configuration and deployment-probe tests for database URL compatibility, explicit CORS, and
+  readiness failure behavior
 - Migration tests against a fresh relational database
 - Seed tests for exactly 10,000 employees, repeat execution, and conflict safety
 - Frontend interaction tests for loading, salary display, server query construction,
@@ -41,6 +43,10 @@ checks pass.
 Migration-backed slices must also be applied to a fresh database and checked for
 schema drift. Seed changes must prove both the expected record count and safe repeat
 behaviour outside the unit-test fixture.
+
+Deployment-configuration changes must additionally prove that a production frontend build embeds
+the configured API origin, that the default build retains relative API URLs, and that a fresh
+database configured through `DATABASE_URL` can migrate to the current Alembic head.
 
 ## Continuous Integration
 

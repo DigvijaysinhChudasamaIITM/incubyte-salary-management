@@ -143,6 +143,38 @@ mixing generated assessment data into an ambiguous existing dataset.
 
 ---
 
+## D009 - Provider-Neutral, Explicit Deployment Operations
+
+**Status:** Accepted
+
+### Decision
+
+Keep runtime configuration in environment variables, prefer a same-origin frontend/API topology,
+and run schema migration and optional demonstration seeding as explicit deployment operations.
+Support a split-origin topology through an exact CORS allowlist and a build-time frontend API
+origin, without selecting a hosting vendor or adding container infrastructure.
+
+### Reason
+
+Environment-driven database and origin configuration works with local SQLite and common managed
+PostgreSQL providers. Same-origin routing is operationally simple and avoids unnecessary CORS,
+while opt-in split-origin support prevents the architecture from depending on one provider.
+Keeping migration and seed commands outside web startup prevents concurrent processes and routine
+restarts from applying uncontrolled data changes.
+
+### Alternatives Considered
+
+* Hard-code one deployment provider and its manifest
+* Enable wildcard CORS for every environment
+* Apply migrations and seed data whenever the API starts
+
+### Why Not Chosen
+
+These options add premature provider coupling, expose a broader browser access surface, or make
+production startup mutate schema and data implicitly.
+
+---
+
 ## Open Decisions
 
 The following remain intentionally unresolved until clarification is received:

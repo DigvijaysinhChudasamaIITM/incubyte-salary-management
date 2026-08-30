@@ -180,3 +180,31 @@ migration and seeding before service startup.
 
 The workflow commands were run locally, and the README procedure was repeated from an isolated
 checkout through dependency installation, migration, seeding, tests, lint, and frontend build.
+
+---
+
+## Entry 008 - Deployment Readiness and Production Configuration
+
+**Problem**
+
+Prepare the existing application for a future hosting provider without selecting paid
+infrastructure or deciding any unresolved compensation behavior.
+
+**AI Assistance**
+
+AI reviewed the runtime, migration, frontend build, and seed paths; proposed PostgreSQL URL
+normalization, explicit origin configuration, database-backed readiness, and two portable
+deployment topologies; and identified the configuration and failure paths requiring tests.
+
+**Human Decision**
+
+Same-origin routing remains the preferred simple topology, with split-origin CORS enabled only
+through an exact allowlist. Migrations and optional seed data remain deliberate one-off commands,
+not web-process startup side effects. No provider manifest, Docker setup, or infrastructure service
+was introduced.
+
+**Verification**
+
+Backend configuration and probe tests, the full backend/frontend quality suites, a frontend build
+with an explicit API origin, fresh environment-driven migration, diff validation, and secret scans
+verify the deployment surface before approval.
