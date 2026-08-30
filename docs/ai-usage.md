@@ -79,3 +79,28 @@ For implementation work:
 4. tests and quality checks are executed;
 5. results are manually reviewed;
 6. only verified behaviour is treated as complete.
+
+---
+
+## Entry 004 - Quality Baseline
+
+**Problem**
+
+Establish reproducible backend and frontend quality gates without making product
+assumptions while Incubyte's clarifications remain pending.
+
+**AI Assistance**
+
+AI inspected the assessment, repository history, environment, and existing artifacts;
+then proposed minimal FastAPI and React smoke slices with lint, test, and build tooling.
+
+**Human Decision**
+
+The tooling baseline and health checks were accepted. Employee and salary behavior was
+deferred because it belongs in a later vertical slice. Python 3.10 was selected as the
+minimum supported local runtime after inspection showed that Python 3.11 was unavailable.
+
+**Verification**
+
+Ruff and pytest were run for the backend. ESLint, Vitest, and a TypeScript/Vite production
+build were run for the frontend. Dependency installation reported no known vulnerabilities.
