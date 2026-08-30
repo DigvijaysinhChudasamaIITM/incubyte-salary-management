@@ -208,3 +208,31 @@ was introduced.
 Backend configuration and probe tests, the full backend/frontend quality suites, a frontend build
 with an explicit API origin, fresh environment-driven migration, diff validation, and secret scans
 verify the deployment surface before approval.
+
+---
+
+## Entry 009 - Vercel and Neon Deployment Adaptation
+
+**Problem**
+
+Adapt the existing nested React and FastAPI application to one Vercel domain with Neon persistence
+without moving domain code, exposing secrets, or running schema/data changes during startup.
+
+**AI Assistance**
+
+AI reviewed current Vercel FastAPI, Python runtime, Vite, routing, and Neon connection guidance;
+compared multi-project, private-beta Services, and standard Python-function layouts; and proposed
+the smallest generally available same-origin adapter.
+
+**Human Decision**
+
+Use a root `api/index.py` that imports the existing application, a root dependency reference to
+the backend project, and two probe rewrites. Keep the frontend API base and CORS unset. Use pooled
+Neon connectivity at runtime and a direct secret connection for manual migration and optional
+one-time seeding.
+
+**Verification**
+
+The adapter is verified through backend and frontend suites, entrypoint and connection-pool tests,
+production frontend build, Vercel configuration validation where locally available, diff checks,
+and secret scanning. Hosted routing and real Neon migration remain deployment-time checks.

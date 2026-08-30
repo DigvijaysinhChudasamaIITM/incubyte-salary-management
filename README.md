@@ -80,34 +80,60 @@ not automatically load that file; set values through the shell or deployment pro
 
 | Variable | Used by | Default | Purpose |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | Backend and Alembic | `sqlite:///./salary_management.db` | SQLAlchemy database connection. `postgres://` and `postgresql://` provider URLs use the installed Psycopg driver automatically. |
-| `CORS_ALLOWED_ORIGINS` | Backend | Empty | Comma-separated explicit frontend origins for a split-origin deployment. Wildcards are rejected. |
-| `VITE_API_BASE_URL` | Frontend build | Empty | Backend origin, such as `https://api.example.com`. Empty keeps relative `/api` requests for the local proxy or a same-origin deployment. |
+| `DATABASE_URL` | Backend and Alembic | `sqlite:///./salary_management.db` | SQLAlchemy connection. Production uses Neon's pooled Postgres URL; common provider URL schemes select Psycopg automatically. |
+| `CORS_ALLOWED_ORIGINS` | Backend | Empty | Optional comma-separated frontend origins. Leave empty for the same-origin Vercel deployment. |
+| `VITE_API_BASE_URL` | Frontend build | Empty | Optional backend origin. Leave empty on Vercel so the browser uses same-origin `/api` requests. |
 
 `VITE_API_BASE_URL` is embedded by Vite at build time. Changing it requires rebuilding the
 frontend. Do not put secrets in any `VITE_` variable because browser bundles are public.
 
-## Production readiness
+## Vercel and Neon deployment
 
-A provider-neutral deployment needs a Python web process, a static frontend host, and a
-PostgreSQL-compatible database. Install backend dependencies and apply migrations as an explicit
-release step before starting the service:
+The selected production topology is one Vercel project backed by Neon Postgres. Vercel publishes
+the React build at `/`, packages `api/index.py` as a Python function for `/api/*`, and rewrites the
+public `/health` and `/ready` probes to that function. The project remains same-origin, so do not
+set `VITE_API_BASE_URL` or `CORS_ALLOWED_ORIGINS`.
 
-```shell
+Import the Git repository into Vercel with these settings:
+
+- project root directory: repository root (`.`);
+- framework preset: Other;
+- Node.js version: 22;
+- build command: `npm --prefix frontend ci && npm --prefix frontend run build`;
+- output directory: `frontend/dist`;
+- install command: leave at the Vercel default;
+- production environment variable: `DATABASE_URL` set to the Neon pooled connection string.
+
+The build and output values are committed in `vercel.json`; dashboard values should not override
+them. `.python-version` selects Python 3.12, and root `requirements.txt` installs the existing
+backend package and runtime dependencies.
+
+Create a Neon project and copy both connection strings from its Connect dialog. Use the pooled
+connection string (hostname contains `-pooler`) as Vercel's `DATABASE_URL`, preserving
+`sslmode=require` and `channel_binding=require`. Keep the direct connection string outside Git for
+one-off schema administration.
+
+Before the first production deployment, apply migrations from a trusted workstation using the
+direct Neon URL:
+
+```powershell
 cd backend
 python -m pip install --upgrade pip
-python -m pip install .
+python -m pip install -e ".[dev]"
+$env:DATABASE_URL="<NEON_DIRECT_CONNECTION_STRING>"
 alembic upgrade head
-uvicorn salary_management.main:app --host 0.0.0.0 --port 8000
+alembic current
 ```
 
-The provider should supply its assigned port to Uvicorn in place of `8000`. Build the frontend
-with `npm ci && npm run build` and publish `frontend/dist` as static files.
+If demonstration data is required, run the seed once in the same configured shell:
 
-The simplest topology serves the static frontend and proxies `/api`, `/health`, and `/ready` to
-the backend under one public origin. It needs neither frontend API configuration nor CORS. If the
-frontend and API use different origins, set `VITE_API_BASE_URL` during the frontend build and set
-the exact frontend origin in `CORS_ALLOWED_ORIGINS` for the backend.
+```powershell
+python -m salary_management.seed
+```
+
+The seed is not a Vercel build or startup command. Repeating it against the complete deterministic
+dataset is a no-op; partial or unrelated employee data is rejected. Never paste either Neon URL
+into `VITE_API_BASE_URL`, committed files, build logs, or browser-visible settings.
 
 - `GET /health` is a process liveness check and does not query the database.
 - `GET /ready` checks database connectivity and returns `503` without exposing connection details
@@ -115,6 +141,6 @@ the exact frontend origin in `CORS_ALLOWED_ORIGINS` for the backend.
 - Seeding is never part of application startup. Run `python -m salary_management.seed` only as an
   intentional one-off operation when deterministic demonstration data is wanted.
 
-No provider is selected by this phase. TLS termination, managed database backups, secret
-injection, process scaling, and deployment rollback behavior remain responsibilities of the
-future hosting platform.
+After deployment, verify the frontend, `/api/employees?page=1&page_size=25`, `/health`, and
+`/ready` on the same Vercel domain. Vercel manages TLS and Python function execution; Neon manages
+Postgres persistence and backups according to the selected free-plan capabilities.

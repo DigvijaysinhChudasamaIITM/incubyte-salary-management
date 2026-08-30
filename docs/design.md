@@ -94,12 +94,17 @@ startup. This prevents web-process restarts or horizontal scaling from mutating 
 
 ## Deployment Topology
 
-The preferred initial topology is a built React application and FastAPI service exposed through
-one public origin, with `/api`, `/health`, and `/ready` routed to FastAPI. This avoids browser CORS
-configuration. Separate frontend and API origins are also supported through the paired build-time
-frontend API origin and runtime backend origin allowlist. Hosting remains provider-neutral; TLS,
-secrets, PostgreSQL lifecycle, static asset delivery, and release-command execution belong to the
-selected platform.
+The selected topology is one Vercel project and one Neon Postgres database. Vercel serves the
+compiled React assets at the project domain and packages the existing FastAPI application through
+a thin `api/index.py` entrypoint. `/api/*` reaches the Python function directly; Vercel rewrites
+`/health` and `/ready` to deployment aliases on the same function. Browser requests therefore
+remain same-origin and require neither `VITE_API_BASE_URL` nor CORS configuration.
+
+Vercel reads root `requirements.txt`, which installs the existing backend project rather than
+duplicating its runtime dependency list. Neon supplies a pooled TLS connection string for
+`DATABASE_URL`; SQLAlchemy validates reused connections with `pool_pre-ping`. Alembic migrations
+and optional deterministic seeding use a direct Neon connection from a trusted operator shell and
+remain outside Vercel build and function startup.
 
 ## Pending Product Decisions
 

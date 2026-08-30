@@ -175,6 +175,30 @@ production startup mutate schema and data implicitly.
 
 ---
 
+## D010 - Vercel and Neon Deployment Target
+
+**Status:** Accepted
+
+### Decision
+
+Deploy the React build and FastAPI function as one Vercel project and use Neon Postgres for
+persistent production data. Keep browser API requests same-origin. Use Neon's pooled connection
+for runtime traffic and its direct connection for explicit migration and seed operations.
+
+### Reason
+
+A single domain preserves the existing relative API client, avoids production CORS, and keeps the
+take-home deployment small. A thin Vercel entrypoint adapts the existing backend without moving
+domain code. Neon supplies managed Postgres without changing SQLAlchemy or Alembic boundaries.
+
+### Trade-offs
+
+Vercel's Python runtime is serverless and currently Beta, so cold starts, function limits, and
+database connection behavior differ from a persistent web process. The adapter enables connection
+pre-ping, while migrations and seeding stay outside request handling and deployment builds.
+
+---
+
 ## Open Decisions
 
 The following remain intentionally unresolved until clarification is received:

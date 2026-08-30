@@ -28,6 +28,7 @@ def test_engine_uses_installed_psycopg_driver_for_standard_postgresql_url() -> N
 
     assert engine.dialect.name == "postgresql"
     assert engine.dialect.driver == "psycopg"
+    assert engine.pool._pre_ping is True
     engine.dispose()
 
 

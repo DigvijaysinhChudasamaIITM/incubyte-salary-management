@@ -1,5 +1,6 @@
 .idea/
 .vscode/
+.vercel/
 .DS_Store
 
 # Python

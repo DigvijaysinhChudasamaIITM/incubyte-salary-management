@@ -48,6 +48,12 @@ Deployment-configuration changes must additionally prove that a production front
 the configured API origin, that the default build retains relative API URLs, and that a fresh
 database configured through `DATABASE_URL` can migrate to the current Alembic head.
 
+The Vercel adapter is checked for an exported FastAPI application and deployment probe aliases.
+The committed Vercel configuration must parse successfully, build the nested frontend, retain an
+unset same-origin frontend API base, and install the backend from the root dependency file.
+Live Neon migration and Vercel routing are final deployment checks because credentials and hosted
+infrastructure are deliberately unavailable to repository tests.
+
 ## Continuous Integration
 
 GitHub Actions runs backend Ruff and pytest checks plus frontend Vitest, ESLint, and
