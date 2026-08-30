@@ -13,7 +13,8 @@ than added only at the end.
 - API tests for request validation and response contracts
 - Migration tests against a fresh relational database
 - Seed tests for exactly 10,000 employees, repeat execution, and conflict safety
-- Frontend tests for critical interactions as browsing UI behaviour is introduced
+- Frontend interaction tests for loading, salary display, server query construction,
+  pagination, empty results, and retryable failures
 - At least one end-to-end HR workflow before submission
 
 ## Principles

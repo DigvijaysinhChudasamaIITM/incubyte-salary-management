@@ -37,7 +37,9 @@ npm run build
 ```
 
 Start the development services with `uvicorn salary_management.main:app --reload`
-from `backend` and `npm run dev` from `frontend`.
+from `backend` and `npm run dev` from `frontend`. Open `http://localhost:5173` to use
+the employee browsing interface. During local development, Vite proxies `/api` requests
+to the backend at `http://127.0.0.1:8000`.
 
 ## Database and seed data
 

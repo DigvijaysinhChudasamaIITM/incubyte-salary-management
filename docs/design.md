@@ -17,10 +17,16 @@ flowchart LR
 
 Employee browsing follows a small modular-monolith flow:
 
-1. FastAPI validates query parameters and owns the HTTP response contract.
-2. The employee service normalizes optional search and filter inputs and calculates page metadata.
-3. The repository builds the filtered count and bounded employee query.
-4. SQLAlchemy executes both queries against relational persistence.
+1. React owns the active search/filter/page state and requests only the current page.
+2. FastAPI validates query parameters and owns the HTTP response contract.
+3. The employee service normalizes optional search and filter inputs and calculates page metadata.
+4. The repository builds the filtered count and bounded employee query.
+5. SQLAlchemy executes both queries against relational persistence.
+
+The browser uses relative `/api` URLs. Vite proxies those requests to FastAPI during local
+development, while deployment can serve both applications behind one origin. In-flight requests
+are cancelled when the query changes, and controls are disabled until the replacement page is
+resolved. API salary strings are grouped for display without conversion to JavaScript numbers.
 
 ## Backend Boundaries
 

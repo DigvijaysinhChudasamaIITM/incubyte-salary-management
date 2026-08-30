@@ -129,3 +129,29 @@ features remain deferred pending Incubyte's answers.
 
 The slice is verified through repository, database-constraint, migration, seed, and API tests,
 plus fresh-database migration and two-run 10,000-employee seed checks.
+
+---
+
+## Entry 006 - Employee Browsing Interface
+
+**Problem**
+
+Expose the server-paginated employee dataset through an accessible, responsive HR workspace
+without pulling all employee records into the browser or adding deferred product features.
+
+**AI Assistance**
+
+AI proposed the request-state model, relative API client, responsive table layout, string-based
+salary formatting, and tests for loading, querying, pagination, empty, and error behavior.
+
+**Human Decision**
+
+Search is explicitly submitted, country and department filters request page one immediately,
+and all controls are disabled while a replacement page is loading. Salary strings are formatted
+without converting them to JavaScript numbers. Decorative dashboard or analytics content was
+rejected as outside the current slice.
+
+**Verification**
+
+The interface was verified with Vitest interaction tests, ESLint, TypeScript compilation, a Vite
+production build, and a manual smoke test through the development proxy against the seeded API.
