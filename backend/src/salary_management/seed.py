@@ -1,12 +1,21 @@
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from salary_management.persistence.database import SessionLocal
-from salary_management.persistence.models import Employee
+from salary_management.persistence.models import Employee, ExchangeRate
 
 EMPLOYEE_COUNT = 10_000
+EXCHANGE_RATE_DATE = date(2026, 8, 31)
+EXCHANGE_RATES = {
+    "USD": Decimal("1.0000000000"),
+    "INR": Decimal("0.0120000000"),
+    "GBP": Decimal("1.2500000000"),
+    "EUR": Decimal("1.1000000000"),
+    "CAD": Decimal("0.7400000000"),
+}
 
 COUNTRIES = (
     ("US", "USD"),
@@ -23,6 +32,32 @@ LAST_NAMES = ("Patel", "Smith", "Brown", "Shah", "Miller", "Wilson", "Kumar", "T
 
 class SeedDataConflict(RuntimeError):
     pass
+
+
+def seed_exchange_rates(session: Session) -> int:
+    existing = {rate.currency_code: rate for rate in session.scalars(select(ExchangeRate))}
+    if existing:
+        matches = len(existing) == len(EXCHANGE_RATES) and all(
+            code in existing
+            and existing[code].rate_to_usd == rate
+            and existing[code].effective_date == EXCHANGE_RATE_DATE
+            for code, rate in EXCHANGE_RATES.items()
+        )
+        if matches:
+            return 0
+        raise SeedDataConflict(
+            "Exchange-rate data already exists but does not match the deterministic seed set."
+        )
+
+    session.add_all(
+        ExchangeRate(
+            currency_code=currency_code,
+            rate_to_usd=rate_to_usd,
+            effective_date=EXCHANGE_RATE_DATE,
+        )
+        for currency_code, rate_to_usd in EXCHANGE_RATES.items()
+    )
+    return len(EXCHANGE_RATES)
 
 
 def seed_employees(session: Session) -> int:
@@ -42,6 +77,12 @@ def seed_employees(session: Session) -> int:
 
     session.add_all(_employee(number) for number in range(1, EMPLOYEE_COUNT + 1))
     return EMPLOYEE_COUNT
+
+
+def seed_all(session: Session) -> tuple[int, int]:
+    rates_inserted = seed_exchange_rates(session)
+    employees_inserted = seed_employees(session)
+    return employees_inserted, rates_inserted
 
 
 def _employee(number: int) -> Employee:
@@ -67,8 +108,12 @@ def _employee(number: int) -> Employee:
 
 def main() -> None:
     with SessionLocal.begin() as session:
-        inserted = seed_employees(session)
-    print(f"Employee seed complete: {inserted} inserted, {EMPLOYEE_COUNT} expected total.")
+        employees_inserted, rates_inserted = seed_all(session)
+    print(
+        f"Seed complete: {employees_inserted} employees inserted, "
+        f"{EMPLOYEE_COUNT} expected total; {rates_inserted} exchange rates inserted, "
+        f"{len(EXCHANGE_RATES)} expected total."
+    )
 
 
 if __name__ == "__main__":

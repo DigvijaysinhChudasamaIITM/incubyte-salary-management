@@ -125,12 +125,11 @@ the readiness probe distinguishes application availability from database connect
   existing rows to `true`. The current API supports active/inactive/all filtering. The later
   deactivate workflow must update this flag and never physically delete an employee.
 - Preserve employee-code and email uniqueness across inactive records.
-- Add `exchange_rates(currency_code, rate_to_usd, effective_date)` using decimal-safe precision,
-  including USD at `1`. The deterministic seed owns the fixed dated rates; no network call or
-  runtime refresh is needed.
-- Apply one Alembic revision that adds/backfills active state and creates the exchange-rate table,
-  then extend the seed command to verify the complete employee and rate sets. Production migration
-  and seeding remain explicit operator actions.
+- `exchange_rates(currency_code, rate_to_usd, effective_date)` is implemented with
+  `NUMERIC(20,10)` and includes USD at `1`. The deterministic seed owns the fixed dated rates; no
+  network call or runtime refresh occurs.
+- Migration `20260831_03` creates the exchange-rate table. The seed verifies the complete employee
+  and rate sets independently. Production migration and seeding remain explicit operator actions.
 
 USD is an engineering choice, not Incubyte guidance: Incubyte required a common reporting currency
 and gave USD or INR only as examples. Country is the MVP regional comparison grain, avoiding a
@@ -140,6 +139,9 @@ second geographic taxonomy until one is required.
 currency. `rate_to_usd` means `1` unit of that currency equals `rate_to_usd` USD. Rates use
 `NUMERIC(20,10)`/`Decimal`, never floating point. Conversion and aggregation retain full available
 decimal precision; only final API display/reporting amounts are rounded to two USD decimal places.
+The application normalization service rejects non-Decimal salary input and raises
+`exchange_rate_unavailable` when a currency has no seeded rate; it never returns an unconverted
+amount.
 
 ### API and Query Model
 

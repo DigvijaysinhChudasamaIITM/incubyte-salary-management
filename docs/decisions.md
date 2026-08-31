@@ -283,3 +283,23 @@ analytics accurate. Seeded rates are deterministic but become stale and are unsu
 financial settlement. USD normalization is comparative reporting, not payroll accounting. Omitting
 authentication is acceptable only under the confirmed already-authorized internal-user assumption;
 SSO/RBAC is required future hardening for broader production access.
+
+---
+
+## D014 - Deterministic Assessment Exchange Rates
+
+**Status:** Accepted
+
+### Decision
+
+Seed rates dated 2026-08-31 with the meaning `1 local unit = rate_to_usd USD`: USD `1.0000000000`,
+INR `0.0120000000`, GBP `1.2500000000`, EUR `1.1000000000`, and CAD `0.7400000000`. Store and
+calculate with `NUMERIC(20,10)`/Python `Decimal`; preserve multiplication precision and leave
+rounding to a later reporting boundary. Reject missing rates as `exchange_rate_unavailable`.
+
+### Reason and Trade-offs
+
+These five currencies exactly cover the deterministic employee dataset. Simple fixed values make
+tests and assessment results reproducible. They are static fixtures, not current market prices;
+live or historical FX management remains deliberately out of scope and the values must not be used
+for financial settlement.

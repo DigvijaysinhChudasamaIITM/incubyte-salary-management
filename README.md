@@ -10,8 +10,10 @@ Implementation in progress.
 **Live demo:** https://incubyte-salary-management-eight.vercel.app
 
 Incubyte-confirmed MVP requirements and separate engineering decisions are documented under
-`/docs`. The current live slice is a verified browsing foundation; confirmed CRUD, sorting,
-deactivation, exchange-rate, and compensation-dashboard work is documented but not yet implemented.
+`/docs`. The current live slice includes the verified directory and server-side sorting/status
+controls. CRUD, deactivation, and compensation-dashboard work remains planned; the deterministic
+exchange-rate foundation is implemented locally but requires an explicit migration and seed before
+deployment.
 
 ## Prerequisites
 
@@ -39,8 +41,10 @@ uvicorn salary_management.main:app --reload
 ```
 
 The migration and seed commands use `DATABASE_URL` when set and otherwise use
-`sqlite:///./salary_management.db`. Repeating the seed is a safe no-op when the complete
-seed dataset exists; partial or unrelated employee data causes an explicit error.
+`sqlite:///./salary_management.db`. Repeating the seed is a safe no-op when the complete employee
+and exchange-rate datasets exist; partial, unrelated, or conflicting deterministic data causes an
+explicit error. The USD, INR, GBP, EUR, and CAD rates are fixed assessment fixtures dated
+2026-08-31—not current market rates and not suitable for financial settlement.
 
 In a second terminal, install and start the frontend:
 
