@@ -390,7 +390,9 @@ test("shows salary validation and prevents duplicate salary submissions", async 
     ),
   );
   vi.stubGlobal("fetch", validationFetch);
-  fireEvent.click(screen.getByRole("button", { name: "Edit salary for Asha Patel" }));
+  const editSalary = screen.getByRole("button", { name: "Edit salary for Asha Patel" });
+  await waitFor(() => expect(editSalary).toBeEnabled());
+  fireEvent.click(editSalary);
   dialog = await screen.findByRole("dialog");
   fireEvent.click(within(dialog).getByRole("button", { name: "Update salary" }));
   expect(await within(dialog).findByText("Input should be greater than 0")).toBeInTheDocument();
