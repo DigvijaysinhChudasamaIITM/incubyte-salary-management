@@ -105,8 +105,9 @@ Import the Git repository into Vercel with these settings:
 - production environment variable: `DATABASE_URL` set to the Neon pooled connection string.
 
 The build and output values are committed in `vercel.json`; dashboard values should not override
-them. `.python-version` selects Python 3.12, and root `requirements.txt` installs the existing
-backend package and runtime dependencies.
+them. `.python-version` selects Python 3.12. The root `pyproject.toml` declares
+`salary-management-api` and maps it to `./backend` for uv; the backend package remains authoritative
+for its runtime dependencies.
 
 Create a Neon project and copy both connection strings from its Connect dialog. Use the pooled
 connection string (hostname contains `-pooler`) as Vercel's `DATABASE_URL`, preserving

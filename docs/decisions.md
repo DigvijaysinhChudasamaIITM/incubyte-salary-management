@@ -199,6 +199,29 @@ pre-ping, while migrations and seeding stay outside request handling and deploym
 
 ---
 
+## D011 - Explicit uv Source for the Backend Package
+
+**Status:** Accepted
+
+### Decision
+
+Declare `salary-management-api` as the root deployment project's only dependency and map that name
+to `./backend` with `[tool.uv.sources]`. Keep package metadata and runtime dependency versions in
+`backend/pyproject.toml`.
+
+### Reason
+
+A bare `./backend` requirements entry makes uv infer the package name `backend`, which conflicts
+with the published metadata name `salary-management-api`. The explicit name-to-path mapping gives
+uv both identities without duplicating the backend dependency list.
+
+### Trade-offs
+
+The root now contains minimal uv-specific project metadata. Other Python package managers do not
+interpret `[tool.uv.sources]`, so the deployment install path assumes Vercel's current uv resolver.
+
+---
+
 ## Open Decisions
 
 The following remain intentionally unresolved until clarification is received:

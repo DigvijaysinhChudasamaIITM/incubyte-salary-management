@@ -100,8 +100,9 @@ a thin `api/index.py` entrypoint. `/api/*` reaches the Python function directly;
 `/health` and `/ready` to deployment aliases on the same function. Browser requests therefore
 remain same-origin and require neither `VITE_API_BASE_URL` nor CORS configuration.
 
-Vercel reads root `requirements.txt`, which installs the existing backend project rather than
-duplicating its runtime dependency list. Neon supplies a pooled TLS connection string for
+Vercel resolves the root `pyproject.toml` with uv, which maps the declared
+`salary-management-api` dependency to the existing `./backend` project rather than duplicating its
+runtime dependency list. Neon supplies a pooled TLS connection string for
 `DATABASE_URL`; SQLAlchemy validates reused connections with `pool_pre-ping`. Alembic migrations
 and optional deterministic seeding use a direct Neon connection from a trusted operator shell and
 remain outside Vercel build and function startup.

@@ -236,3 +236,27 @@ one-time seeding.
 The adapter is verified through backend and frontend suites, entrypoint and connection-pool tests,
 production frontend build, Vercel configuration validation where locally available, diff checks,
 and secret scanning. Hosted routing and real Neon migration remain deployment-time checks.
+
+---
+
+## Entry 010 - Vercel uv Package Identity Fix
+
+**Problem**
+
+Vercel's uv resolver inferred the name `backend` from a bare root path requirement, then rejected
+the backend project's authoritative metadata name, `salary-management-api`.
+
+**AI Assistance**
+
+AI identified the path-name inference conflict and implemented the smallest explicit uv source
+mapping while preserving the backend package boundary and Python 3.12 selection.
+
+**Human Decision**
+
+Use a non-package root deployment project that depends on `salary-management-api`, mapped to
+`./backend` through `[tool.uv.sources]`. Do not copy backend dependency versions to the root.
+
+**Verification**
+
+The change is checked with uv dependency resolution when available, the full backend and frontend
+quality suites, the production and Vercel build commands, diff validation, and secret scanning.
