@@ -4,9 +4,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  Pencil,
   RefreshCw,
   Search,
   SlidersHorizontal,
+  UserX,
   X,
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
@@ -21,6 +23,10 @@ import {
   fetchSupportedCurrencies,
 } from "./api/employees";
 import { EmployeeCreateDialog } from "./EmployeeCreateDialog";
+import {
+  DeactivateEmployeeDialog,
+  SalaryUpdateDialog,
+} from "./EmployeeActionDialogs";
 
 const PAGE_SIZE = 25;
 const COUNTRIES = [
@@ -54,6 +60,10 @@ export function App() {
   const [currenciesLoading, setCurrenciesLoading] = useState(false);
   const [currenciesError, setCurrenciesError] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [employeeAction, setEmployeeAction] = useState<{
+    type: "salary" | "deactivate";
+    employee: Employee;
+  } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -134,6 +144,20 @@ export function App() {
   function employeeCreated(employee: Employee) {
     setCreateOpen(false);
     setSuccessMessage(`${employee.name} was added successfully.`);
+    beginRequest();
+    setReload((value) => value + 1);
+  }
+
+  function employeeMutationCompleted(
+    employee: Employee,
+    action: "salary" | "deactivate",
+  ) {
+    setEmployeeAction(null);
+    setSuccessMessage(
+      action === "salary"
+        ? `${employee.name}'s salary was updated successfully.`
+        : `${employee.name} was deactivated successfully.`,
+    );
     beginRequest();
     setReload((value) => value + 1);
   }
@@ -275,6 +299,8 @@ export function App() {
               sortBy={query.sortBy}
               sortDirection={query.sortDirection}
               onSort={setSort}
+              onEditSalary={(employee) => setEmployeeAction({ type: "salary", employee })}
+              onDeactivate={(employee) => setEmployeeAction({ type: "deactivate", employee })}
             />
           ) : null}
 
@@ -296,6 +322,20 @@ export function App() {
           onCreated={employeeCreated}
         />
       )}
+      {employeeAction?.type === "salary" && (
+        <SalaryUpdateDialog
+          employee={employeeAction.employee}
+          onClose={() => setEmployeeAction(null)}
+          onCompleted={employeeMutationCompleted}
+        />
+      )}
+      {employeeAction?.type === "deactivate" && (
+        <DeactivateEmployeeDialog
+          employee={employeeAction.employee}
+          onClose={() => setEmployeeAction(null)}
+          onCompleted={employeeMutationCompleted}
+        />
+      )}
     </div>
   );
 }
@@ -308,12 +348,22 @@ const SORTABLE_COLUMNS: ReadonlyArray<{ field: EmployeeSortField; label: string 
   { field: "job_title", label: "Job title" },
 ];
 
-function EmployeeTable({ employees, loading, sortBy, sortDirection, onSort }: {
+function EmployeeTable({
+  employees,
+  loading,
+  sortBy,
+  sortDirection,
+  onSort,
+  onEditSalary,
+  onDeactivate,
+}: {
   employees: Employee[];
   loading: boolean;
   sortBy: EmployeeSortField;
   sortDirection: "asc" | "desc";
   onSort: (sortBy: EmployeeSortField) => void;
+  onEditSalary: (employee: Employee) => void;
+  onDeactivate: (employee: Employee) => void;
 }) {
   return (
     <div className="table-scroll" aria-busy={loading}>
@@ -345,6 +395,7 @@ function EmployeeTable({ employees, loading, sortBy, sortDirection, onSort }: {
               );
             })}
             <th scope="col" className="salary-column">Salary</th>
+            <th scope="col" className="actions-column">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -359,6 +410,20 @@ function EmployeeTable({ employees, loading, sortBy, sortDirection, onSort }: {
               <td>{employee.department}</td>
               <td>{employee.job_title}</td>
               <td className="salary-column">{formatSalary(employee.salary_amount, employee.currency)}</td>
+              <td className="actions-column">
+                {employee.is_active ? (
+                  <div className="row-actions">
+                    <button type="button" aria-label={`Edit salary for ${employee.name}`} title="Edit salary" onClick={() => onEditSalary(employee)} disabled={loading}>
+                      <Pencil size={15} aria-hidden="true" />
+                    </button>
+                    <button type="button" aria-label={`Deactivate ${employee.name}`} title="Deactivate employee" onClick={() => onDeactivate(employee)} disabled={loading}>
+                      <UserX size={15} aria-hidden="true" />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="inactive-label">Inactive</span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

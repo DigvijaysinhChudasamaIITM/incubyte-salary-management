@@ -144,6 +144,19 @@ h1 {
   align-items: center;
 }
 
+.danger-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  color: #ffffff;
+  background: #9a342a;
+  border: 1px solid #9a342a;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
 .heading-actions {
   gap: 1rem;
 }
@@ -351,7 +364,7 @@ th:nth-child(5) {
 }
 
 th:last-child {
-  width: 18%;
+  width: 10%;
 }
 
 .sort-button {
@@ -417,6 +430,38 @@ td span {
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
+}
+
+.actions-column {
+  text-align: right;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.row-actions button {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  padding: 0;
+  color: #315a43;
+  background: #ffffff;
+  border: 1px solid #c5cfc8;
+  border-radius: 5px;
+}
+
+.row-actions button:last-child {
+  color: #8b3d34;
+}
+
+.inactive-label {
+  color: #6b756f;
+  font-size: 0.75rem;
+  font-weight: 650;
 }
 
 .pagination {
@@ -526,6 +571,34 @@ td span {
 
 .employee-dialog form {
   padding: 1.5rem;
+}
+
+.action-dialog {
+  width: min(32rem, 100%);
+}
+
+.action-dialog-body {
+  padding: 1.5rem;
+}
+
+.action-dialog-body form {
+  padding: 0;
+}
+
+.dialog-context,
+.confirmation-copy {
+  margin-bottom: 1.25rem;
+  color: #4c5c53;
+  font-size: 0.86rem;
+}
+
+.confirmation-copy {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.confirmation-copy strong {
+  color: #202d26;
 }
 
 .form-grid {

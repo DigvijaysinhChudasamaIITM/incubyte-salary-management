@@ -95,12 +95,44 @@ class EmployeeService:
             )
         )
 
+    def update_salary(self, employee_code: str, salary_amount: Decimal) -> Employee:
+        normalized_code = employee_code.strip().upper()
+        employee = self.repository.find_by_code(normalized_code)
+        if employee is None:
+            raise EmployeeNotFound(normalized_code)
+        if not employee.is_active:
+            raise InactiveEmployee(normalized_code)
+        return self.repository.update_salary(employee, salary_amount)
+
+    def deactivate(self, employee_code: str) -> Employee:
+        normalized_code = employee_code.strip().upper()
+        employee = self.repository.find_by_code(normalized_code)
+        if employee is None:
+            raise EmployeeNotFound(normalized_code)
+        return self.repository.deactivate(employee)
+
 
 class UnsupportedCurrency(ValueError):
     code = "unsupported_currency"
 
     def __init__(self, currency_code: str) -> None:
         self.currency_code = currency_code
+        super().__init__(self.code)
+
+
+class EmployeeNotFound(LookupError):
+    code = "employee_not_found"
+
+    def __init__(self, employee_code: str) -> None:
+        self.employee_code = employee_code
+        super().__init__(self.code)
+
+
+class InactiveEmployee(RuntimeError):
+    code = "employee_inactive"
+
+    def __init__(self, employee_code: str) -> None:
+        self.employee_code = employee_code
         super().__init__(self.code)
 
 

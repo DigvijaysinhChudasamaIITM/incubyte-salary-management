@@ -7,8 +7,14 @@ from salary_management.api.schemas import (
     EmployeeCreateRequest,
     EmployeePageResponse,
     EmployeeResponse,
+    EmployeeSalaryUpdateRequest,
 )
-from salary_management.application.employees import EmployeeService, UnsupportedCurrency
+from salary_management.application.employees import (
+    EmployeeNotFound,
+    EmployeeService,
+    InactiveEmployee,
+    UnsupportedCurrency,
+)
 from salary_management.persistence.database import get_session
 from salary_management.persistence.employee_repository import (
     EmployeeConflict,
@@ -20,6 +26,18 @@ from salary_management.persistence.employee_repository import (
 from salary_management.persistence.exchange_rate_repository import ExchangeRateRepository
 
 router = APIRouter(prefix="/api/employees", tags=["employees"])
+
+
+def _employee_error(error: EmployeeNotFound | InactiveEmployee) -> HTTPException:
+    status_code = (
+        status.HTTP_404_NOT_FOUND
+        if isinstance(error, EmployeeNotFound)
+        else status.HTTP_409_CONFLICT
+    )
+    return HTTPException(
+        status_code=status_code,
+        detail={"code": error.code, "employee_code": error.employee_code},
+    )
 
 
 @router.post("", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
@@ -41,6 +59,33 @@ def create_employee(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={"code": error.code, "currency": error.currency_code},
         ) from None
+    return EmployeeResponse.model_validate(employee, from_attributes=True)
+
+
+@router.patch("/{employee_code}/salary", response_model=EmployeeResponse)
+def update_employee_salary(
+    employee_code: str,
+    request: EmployeeSalaryUpdateRequest,
+    session: Annotated[Session, Depends(get_session)],
+) -> EmployeeResponse:
+    try:
+        employee = EmployeeService(EmployeeRepository(session)).update_salary(
+            employee_code, request.salary_amount
+        )
+    except (EmployeeNotFound, InactiveEmployee) as error:
+        raise _employee_error(error) from None
+    return EmployeeResponse.model_validate(employee, from_attributes=True)
+
+
+@router.post("/{employee_code}/deactivate", response_model=EmployeeResponse)
+def deactivate_employee(
+    employee_code: str,
+    session: Annotated[Session, Depends(get_session)],
+) -> EmployeeResponse:
+    try:
+        employee = EmployeeService(EmployeeRepository(session)).deactivate(employee_code)
+    except EmployeeNotFound as error:
+        raise _employee_error(error) from None
     return EmployeeResponse.model_validate(employee, from_attributes=True)
 
 

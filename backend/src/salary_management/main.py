@@ -32,7 +32,7 @@ def create_app() -> FastAPI:
             CORSMiddleware,
             allow_origins=allowed_origins,
             allow_credentials=False,
-            allow_methods=["GET", "POST"],
+            allow_methods=["GET", "PATCH", "POST"],
             allow_headers=["Accept", "Content-Type"],
         )
     application.include_router(employee_router)

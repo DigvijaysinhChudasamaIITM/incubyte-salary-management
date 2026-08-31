@@ -107,6 +107,23 @@ class EmployeeRepository:
         self.session.refresh(employee)
         return employee
 
+    def find_by_code(self, employee_code: str) -> Employee | None:
+        statement = select(Employee).where(Employee.employee_code == employee_code)
+        return self.session.scalar(statement)
+
+    def update_salary(self, employee: Employee, salary_amount: Decimal) -> Employee:
+        employee.salary_amount = salary_amount
+        self.session.commit()
+        self.session.refresh(employee)
+        return employee
+
+    def deactivate(self, employee: Employee) -> Employee:
+        if employee.is_active:
+            employee.is_active = False
+            self.session.commit()
+            self.session.refresh(employee)
+        return employee
+
     def _conflicting_fields(self, employee_code: str, email: str) -> list[str]:
         statement = select(Employee.employee_code, Employee.email).where(
             or_(Employee.employee_code == employee_code, Employee.email == email)

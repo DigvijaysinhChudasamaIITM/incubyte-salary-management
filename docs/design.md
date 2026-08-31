@@ -151,9 +151,10 @@ amount.
 - `POST /api/employees` creates active employees through the service/repository transaction. The
   database remains the concurrency-safe uniqueness guard, while structured `409` responses identify
   code/email conflicts. `GET /api/metadata/currencies` exposes codes only for the create selector.
-- Later add `PATCH /api/employees/{employee_code}/salary` and idempotent
-  `POST /api/employees/{employee_code}/deactivate`. Deactivation sets `is_active=false`; it does not
-  issue SQL `DELETE`.
+- `PATCH /api/employees/{employee_code}/salary` updates only the Decimal salary amount for active
+  employees; inactive employees return `409`. `POST /api/employees/{employee_code}/deactivate` is
+  idempotent, sets `is_active=false`, and never issues SQL `DELETE`. Both return structured `404`
+  for unknown codes.
 - Keep directory responses sufficient for viewing the complete MVP record. A separate detail
   endpoint is deferred because it would duplicate the same fields without a distinct workflow.
 - Add `GET /api/analytics/payroll` for total normalized payroll, department/country breakdowns and
@@ -190,8 +191,9 @@ with a structured `503 exchange_rate_unavailable` response.
 
 - The directory implements sortable headings, active/inactive filtering, and an accessible create
   dialog backed by server currency metadata. Successful creation refetches the current server page.
-- Later add edit-salary and confirmation-based deactivate dialogs while preserving current
-  search/filter/page behavior.
+- Active rows expose focused salary-edit and confirmation-based deactivate dialogs. Currency is
+  read-only during salary edits, deactivation explains record retention, and both workflows refetch
+  the current server query after success. Inactive rows expose neither action.
 - Treat the existing complete directory row as the P0 record view; do not add a detail route yet.
 - Add a dashboard with top-level USD KPIs, department/country breakdown charts or tables, role P50
   and average comparisons, extrema, and useful filters. Clearly label native versus normalized USD.

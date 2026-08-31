@@ -12,7 +12,8 @@ Implementation in progress.
 Incubyte-confirmed MVP requirements and separate engineering decisions are documented under
 `/docs`. The current production slice includes the verified directory, server-side sorting/status
 controls, and deterministic exchange-rate foundation. Employee creation is implemented locally;
-salary editing, deactivation, and the compensation dashboard remain planned.
+salary editing and deactivation are now also implemented locally. Compensation analytics and the
+dashboard remain planned.
 
 ## Prerequisites
 
@@ -83,6 +84,13 @@ Create an active employee with `POST /api/employees`. The request requires emplo
 email, two-letter country, department, job title, positive decimal salary amount, and a currency
 returned by `GET /api/metadata/currencies`. Duplicate employee code/email returns structured
 `409`; invalid input or an unsupported currency returns `422`.
+
+Update an active employee's current native salary with
+`PATCH /api/employees/{employee_code}/salary` and `{ "salary_amount": "81234.56" }`. Currency and
+all other fields remain unchanged; inactive employees return structured `409`. Deactivate with
+`POST /api/employees/{employee_code}/deactivate`; the operation is idempotent and retains the full
+record for `status=inactive` and `status=all` queries. Unknown employee codes return structured
+`404` from both actions.
 
 ## Environment variables
 

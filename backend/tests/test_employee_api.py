@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from decimal import Decimal
 
 import pytest
 from conftest import employee
@@ -262,3 +263,128 @@ def test_commit_time_unique_constraint_failure_returns_structured_conflict(
     assert response.json() == {
         "detail": {"code": "employee_conflict", "fields": [conflict_field]}
     }
+
+
+def test_updates_exact_salary_and_preserves_every_other_employee_field(
+    session: Session,
+) -> None:
+    record = employee(1, name="Asha Patel", country="IN", department="Finance")
+    session.add(record)
+    session.commit()
+    original = {
+        "id": record.id,
+        "employee_code": record.employee_code,
+        "name": record.name,
+        "email": record.email,
+        "country": record.country,
+        "department": record.department,
+        "job_title": record.job_title,
+        "currency": record.currency,
+        "is_active": record.is_active,
+    }
+
+    response = client_for(session).patch(
+        "/api/employees/emp00001/salary", json={"salary_amount": "81234.56"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["salary_amount"] == "81234.56"
+    assert response.json()["currency"] == "USD"
+    session.refresh(record)
+    assert record.salary_amount == Decimal("81234.56")
+    assert isinstance(record.salary_amount, Decimal)
+    assert {
+        "id": record.id,
+        "employee_code": record.employee_code,
+        "name": record.name,
+        "email": record.email,
+        "country": record.country,
+        "department": record.department,
+        "job_title": record.job_title,
+        "currency": record.currency,
+        "is_active": record.is_active,
+    } == original
+
+
+@pytest.mark.parametrize("salary", ["0.00", "-1.00"])
+def test_salary_update_rejects_non_positive_amount(
+    session: Session, salary: str
+) -> None:
+    session.add(employee(1))
+    session.commit()
+
+    response = client_for(session).patch(
+        "/api/employees/EMP00001/salary", json={"salary_amount": salary}
+    )
+
+    assert response.status_code == 422
+
+
+def test_salary_update_rejects_inactive_employee(session: Session) -> None:
+    record = employee(1, is_active=False)
+    session.add(record)
+    session.commit()
+
+    response = client_for(session).patch(
+        "/api/employees/EMP00001/salary", json={"salary_amount": "80000.00"}
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": {"code": "employee_inactive", "employee_code": "EMP00001"}
+    }
+    session.refresh(record)
+    assert record.salary_amount == Decimal("75000.25")
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "body"),
+    [
+        ("patch", "/api/employees/UNKNOWN/salary", {"salary_amount": "80000.00"}),
+        ("post", "/api/employees/UNKNOWN/deactivate", None),
+    ],
+)
+def test_employee_mutations_return_structured_not_found(
+    session: Session, method: str, path: str, body: dict[str, str] | None
+) -> None:
+    client = client_for(session)
+
+    response = getattr(client, method)(path, json=body)
+
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": {"code": "employee_not_found", "employee_code": "UNKNOWN"}
+    }
+
+
+def test_deactivation_is_idempotent_preserves_record_and_updates_listing_totals(
+    session: Session,
+) -> None:
+    target = employee(1, name="Preserved Employee")
+    session.add_all([target, employee(2), employee(3)])
+    session.commit()
+    target_id = target.id
+
+    first = client_for(session).post("/api/employees/EMP00001/deactivate")
+    second = client_for(session).post("/api/employees/EMP00001/deactivate")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json() == second.json()
+    assert second.json()["is_active"] is False
+    assert second.json()["name"] == "Preserved Employee"
+    session.expire_all()
+    preserved = session.get(Employee, target_id)
+    assert preserved is not None
+    assert preserved.employee_code == "EMP00001"
+    assert preserved.salary_amount == Decimal("75000.25")
+
+    client = client_for(session)
+    active = client.get("/api/employees?status=active").json()
+    inactive = client.get("/api/employees?status=inactive").json()
+    all_records = client.get("/api/employees?status=all").json()
+    assert active["total"] == 2
+    assert inactive["total"] == 1
+    assert inactive["items"][0]["employee_code"] == "EMP00001"
+    assert all_records["total"] == 3
+    assert any(item["employee_code"] == "EMP00001" for item in all_records["items"])

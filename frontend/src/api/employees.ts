@@ -110,3 +110,37 @@ export async function createEmployee(input: EmployeeCreateInput): Promise<Employ
   }
   return response.json() as Promise<Employee>;
 }
+
+async function employeeMutation(
+  path: string,
+  method: "PATCH" | "POST",
+  body?: object,
+): Promise<Employee> {
+  const response = await fetch(apiUrl(path), {
+    method,
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) {
+    throw new EmployeeApiError(response.status, await response.json().catch(() => null));
+  }
+  return response.json() as Promise<Employee>;
+}
+
+export function updateEmployeeSalary(
+  employeeCode: string,
+  salaryAmount: string,
+): Promise<Employee> {
+  return employeeMutation(
+    `/api/employees/${encodeURIComponent(employeeCode)}/salary`,
+    "PATCH",
+    { salary_amount: salaryAmount },
+  );
+}
+
+export function deactivateEmployee(employeeCode: string): Promise<Employee> {
+  return employeeMutation(
+    `/api/employees/${encodeURIComponent(employeeCode)}/deactivate`,
+    "POST",
+  );
+}

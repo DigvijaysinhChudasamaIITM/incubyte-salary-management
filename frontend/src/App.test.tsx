@@ -340,6 +340,108 @@ test("shows backend validation and general create failures without closing the f
   expect(await within(dialog).findByText("Employee could not be created. Try again.")).toBeInTheDocument();
 });
 
+test("updates native salary and refetches the directory", async () => {
+  const updated = { ...asha, salary_amount: "81234.56" };
+  const fetchMock = mutationFetch("PATCH", jsonResponse(updated));
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  await screen.findByText("Asha Patel");
+
+  fireEvent.click(screen.getByRole("button", { name: "Edit salary for Asha Patel" }));
+  const dialog = await screen.findByRole("dialog", { name: "Update salary" });
+  expect(within(dialog).getByText(/Current native salary: INR 75000.25/)).toBeInTheDocument();
+  expect(within(dialog).queryByLabelText("Currency")).not.toBeInTheDocument();
+  fireEvent.change(within(dialog).getByLabelText("Salary amount (INR)"), {
+    target: { value: "81234.56" },
+  });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Update salary" }));
+
+  expect(await screen.findByRole("status")).toHaveTextContent("salary was updated successfully");
+  const patchCall = fetchMock.mock.calls.find(([, init]) => init?.method === "PATCH");
+  expect(String(patchCall?.[0])).toContain("/api/employees/EMP00001/salary");
+  expect(JSON.parse(String(patchCall?.[1]?.body))).toEqual({ salary_amount: "81234.56" });
+  await expectDirectoryRefetch(fetchMock);
+});
+
+test("shows salary validation and prevents duplicate salary submissions", async () => {
+  let resolveUpdate!: (response: Response) => void;
+  const pendingUpdate = new Promise<Response>((resolve) => { resolveUpdate = resolve; });
+  const fetchMock = mutationFetch("PATCH", pendingUpdate);
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  await screen.findByText("Asha Patel");
+  fireEvent.click(screen.getByRole("button", { name: "Edit salary for Asha Patel" }));
+  let dialog = await screen.findByRole("dialog");
+  const submit = within(dialog).getByRole("button", { name: "Update salary" });
+
+  fireEvent.click(submit);
+  fireEvent.click(submit);
+
+  expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "PATCH")).toHaveLength(1);
+  expect(within(dialog).getByRole("button", { name: "Updating salary..." })).toBeDisabled();
+  resolveUpdate(jsonResponse(asha));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+  const validationFetch = mutationFetch(
+    "PATCH",
+    jsonResponse(
+      { detail: [{ loc: ["body", "salary_amount"], msg: "Input should be greater than 0" }] },
+      422,
+    ),
+  );
+  vi.stubGlobal("fetch", validationFetch);
+  fireEvent.click(screen.getByRole("button", { name: "Edit salary for Asha Patel" }));
+  dialog = await screen.findByRole("dialog");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Update salary" }));
+  expect(await within(dialog).findByText("Input should be greater than 0")).toBeInTheDocument();
+});
+
+test("confirms deactivation, prevents duplicate submission, and refetches", async () => {
+  let resolveDeactivate!: (response: Response) => void;
+  const pendingDeactivate = new Promise<Response>((resolve) => { resolveDeactivate = resolve; });
+  const fetchMock = mutationFetch("POST", pendingDeactivate);
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  await screen.findByText("Asha Patel");
+  fireEvent.click(screen.getByRole("button", { name: "Deactivate Asha Patel" }));
+  const dialog = await screen.findByRole("dialog", { name: "Deactivate employee" });
+  expect(within(dialog).getByText(/record will be retained/)).toBeInTheDocument();
+  expect(within(dialog).getByText(/excluded from current payroll/)).toBeInTheDocument();
+  const confirm = within(dialog).getByRole("button", { name: "Deactivate employee" });
+
+  fireEvent.click(confirm);
+  fireEvent.click(confirm);
+
+  expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  expect(within(dialog).getByRole("button", { name: "Deactivating employee..." })).toBeDisabled();
+  resolveDeactivate(jsonResponse({ ...asha, is_active: false }));
+  expect(await screen.findByRole("status")).toHaveTextContent("was deactivated successfully");
+  await expectDirectoryRefetch(fetchMock);
+});
+
+test("keeps deactivation errors visible without closing the dialog", async () => {
+  vi.stubGlobal("fetch", mutationFetch("POST", jsonResponse({ detail: "failure" }, 500)));
+  render(<App />);
+  await screen.findByText("Asha Patel");
+  fireEvent.click(screen.getByRole("button", { name: "Deactivate Asha Patel" }));
+  const dialog = await screen.findByRole("dialog");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate employee" }));
+
+  expect(
+    await within(dialog).findByText("The employee action could not be completed. Try again."),
+  ).toBeInTheDocument();
+  expect(within(dialog).getByRole("button", { name: "Deactivate employee" })).toBeEnabled();
+});
+
+test("does not expose mutation actions for an inactive employee", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [{ ...asha, is_active: false }] })));
+  render(<App />);
+
+  expect(await screen.findByText("Inactive")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Edit salary for/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Deactivate Asha/ })).not.toBeInTheDocument();
+});
+
 function lastQuery(fetchMock: ReturnType<typeof vi.fn>): URLSearchParams {
   return new URL(String(fetchMock.mock.lastCall?.[0]), "http://localhost").searchParams;
 }
@@ -359,6 +461,22 @@ function createFormFetch(createResponse: Response) {
     }
     if (init?.method === "POST") return Promise.resolve(createResponse);
     return Promise.resolve(response());
+  });
+}
+
+function mutationFetch(method: "PATCH" | "POST", mutationResponse: Response | Promise<Response>) {
+  return vi.fn((input: string | URL | Request, init?: RequestInit) => {
+    if (init?.method === method) return Promise.resolve(mutationResponse);
+    return Promise.resolve(response());
+  });
+}
+
+async function expectDirectoryRefetch(fetchMock: ReturnType<typeof vi.fn>) {
+  await waitFor(() => {
+    const directoryGets = fetchMock.mock.calls.filter(([input, init]) =>
+      String(input).includes("/api/employees?") && !init?.method
+    );
+    expect(directoryGets).toHaveLength(2);
   });
 }
 
