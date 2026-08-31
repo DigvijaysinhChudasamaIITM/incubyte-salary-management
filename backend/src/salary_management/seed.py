@@ -61,18 +61,17 @@ def seed_exchange_rates(session: Session) -> int:
 
 
 def seed_employees(session: Session) -> int:
-    existing_codes = list(
-        session.scalars(select(Employee.employee_code).order_by(Employee.employee_code))
-    )
-    expected_codes = (f"EMP{number:05d}" for number in range(1, EMPLOYEE_COUNT + 1))
+    existing_codes = set(session.scalars(select(Employee.employee_code)))
+    expected_codes = {
+        f"EMP{number:05d}" for number in range(1, EMPLOYEE_COUNT + 1)
+    }
+    present_seed_codes = existing_codes & expected_codes
 
-    if len(existing_codes) == EMPLOYEE_COUNT and all(
-        actual == expected for actual, expected in zip(existing_codes, expected_codes, strict=True)
-    ):
+    if present_seed_codes == expected_codes:
         return 0
-    if existing_codes:
+    if present_seed_codes:
         raise SeedDataConflict(
-            "Employee data already exists but does not match the complete deterministic seed set."
+            "Employee data contains an incomplete deterministic seed set."
         )
 
     session.add_all(_employee(number) for number in range(1, EMPLOYEE_COUNT + 1))

@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Literal
 
 from sqlalchemy import asc, desc, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from salary_management.persistence.models import Employee
@@ -21,6 +25,24 @@ class EmployeeQuery:
     sort_by: EmployeeSortField = "employee_code"
     sort_direction: SortDirection = "asc"
     status: EmployeeStatus = "active"
+
+
+@dataclass(frozen=True)
+class NewEmployee:
+    employee_code: str
+    name: str
+    email: str
+    country: str
+    department: str
+    job_title: str
+    salary_amount: Decimal
+    currency: str
+
+
+class EmployeeConflict(RuntimeError):
+    def __init__(self, fields: list[str]) -> None:
+        self.fields = fields
+        super().__init__("employee_conflict")
 
 
 class EmployeeRepository:
@@ -68,3 +90,31 @@ class EmployeeRepository:
             .limit(query.page_size)
         )
         return list(self.session.scalars(statement)), total or 0
+
+    def create(self, new_employee: NewEmployee) -> Employee:
+        conflicts = self._conflicting_fields(new_employee.employee_code, new_employee.email)
+        if conflicts:
+            raise EmployeeConflict(conflicts)
+
+        employee = Employee(**vars(new_employee), is_active=True)
+        self.session.add(employee)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            conflicts = self._conflicting_fields(new_employee.employee_code, new_employee.email)
+            raise EmployeeConflict(conflicts or ["employee_code", "email"]) from None
+        self.session.refresh(employee)
+        return employee
+
+    def _conflicting_fields(self, employee_code: str, email: str) -> list[str]:
+        statement = select(Employee.employee_code, Employee.email).where(
+            or_(Employee.employee_code == employee_code, Employee.email == email)
+        )
+        existing = self.session.execute(statement).all()
+        conflicts: list[str] = []
+        if any(code == employee_code for code, _ in existing):
+            conflicts.append("employee_code")
+        if any(existing_email == email for _, existing_email in existing):
+            conflicts.append("email")
+        return conflicts

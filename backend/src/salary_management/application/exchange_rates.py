@@ -11,6 +11,10 @@ class ExchangeRateUnavailable(RuntimeError):
         super().__init__(self.code)
 
 
+def supported_currency_codes(repository: ExchangeRateRepository) -> list[str]:
+    return repository.list_currency_codes()
+
+
 def normalize_salary_to_usd(
     native_salary: Decimal,
     currency_code: str,

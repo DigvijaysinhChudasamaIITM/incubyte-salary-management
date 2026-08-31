@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pathlib import Path
 
 from alembic.config import Config
@@ -5,6 +6,9 @@ from sqlalchemy import create_engine, func, inspect, select, text
 from sqlalchemy.orm import Session
 
 from alembic import command
+from salary_management.application.employees import EmployeeService
+from salary_management.persistence.employee_repository import EmployeeRepository
+from salary_management.persistence.exchange_rate_repository import ExchangeRateRepository
 from salary_management.persistence.models import Employee, ExchangeRate
 from salary_management.seed import seed_all, seed_employees
 
@@ -98,5 +102,55 @@ def test_production_rollout_adds_rates_to_existing_complete_employee_seed(
         assert session.scalar(select(func.count()).select_from(ExchangeRate)) == 5
 
         assert seed_all(session) == (0, 0)
+
+    engine.dispose()
+
+
+def test_seed_remains_safe_after_application_creates_an_employee(
+    tmp_path: Path, monkeypatch
+) -> None:
+    database_path = tmp_path / "seed-after-create.db"
+    database_url = f"sqlite:///{database_path.as_posix()}"
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    config = Config(Path(__file__).parents[1] / "alembic.ini")
+    command.upgrade(config, "head")
+    engine = create_engine(database_url)
+
+    with Session(engine) as session:
+        assert seed_all(session) == (10_000, 5)
+        session.commit()
+        service = EmployeeService(
+            EmployeeRepository(session), ExchangeRateRepository(session)
+        )
+        created = service.create(
+            employee_code="EMP10001",
+            name="Application Employee",
+            email="application.employee@example.com",
+            country="ca",
+            department="Engineering",
+            job_title="Engineer",
+            salary_amount=Decimal("98765.43"),
+            currency="cad",
+        )
+        seeded = session.scalar(
+            select(Employee).where(Employee.employee_code == "EMP00001")
+        )
+        assert seeded is not None
+        seeded.salary_amount = Decimal("11111.11")
+        seeded.is_active = False
+        session.commit()
+
+        assert session.scalar(select(func.count()).select_from(Employee)) == 10_001
+        assert seed_all(session) == (0, 0)
+        session.commit()
+
+        session.refresh(created)
+        session.refresh(seeded)
+        assert session.scalar(select(func.count()).select_from(Employee)) == 10_001
+        assert created.name == "Application Employee"
+        assert created.salary_amount == Decimal("98765.43")
+        assert created.is_active is True
+        assert seeded.salary_amount == Decimal("11111.11")
+        assert seeded.is_active is False
 
     engine.dispose()

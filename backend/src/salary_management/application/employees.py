@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from decimal import Decimal
 from math import ceil
 
 from salary_management.persistence.employee_repository import (
@@ -6,8 +7,10 @@ from salary_management.persistence.employee_repository import (
     EmployeeRepository,
     EmployeeSortField,
     EmployeeStatus,
+    NewEmployee,
     SortDirection,
 )
+from salary_management.persistence.exchange_rate_repository import ExchangeRateRepository
 from salary_management.persistence.models import Employee
 
 
@@ -21,8 +24,13 @@ class EmployeePage:
 
 
 class EmployeeService:
-    def __init__(self, repository: EmployeeRepository) -> None:
+    def __init__(
+        self,
+        repository: EmployeeRepository,
+        exchange_rates: ExchangeRateRepository | None = None,
+    ) -> None:
         self.repository = repository
+        self.exchange_rates = exchange_rates
 
     def browse(
         self,
@@ -54,6 +62,46 @@ class EmployeeService:
             total=total,
             total_pages=ceil(total / page_size),
         )
+
+    def create(
+        self,
+        *,
+        employee_code: str,
+        name: str,
+        email: str,
+        country: str,
+        department: str,
+        job_title: str,
+        salary_amount: Decimal,
+        currency: str,
+    ) -> Employee:
+        if self.exchange_rates is None:
+            raise RuntimeError("Exchange-rate repository is required for employee creation")
+
+        normalized_currency = currency.strip().upper()
+        if self.exchange_rates.get_rate_to_usd(normalized_currency) is None:
+            raise UnsupportedCurrency(normalized_currency)
+
+        return self.repository.create(
+            NewEmployee(
+                employee_code=employee_code.strip().upper(),
+                name=name.strip(),
+                email=email.strip().lower(),
+                country=country.strip().upper(),
+                department=department.strip(),
+                job_title=job_title.strip(),
+                salary_amount=salary_amount,
+                currency=normalized_currency,
+            )
+        )
+
+
+class UnsupportedCurrency(ValueError):
+    code = "unsupported_currency"
+
+    def __init__(self, currency_code: str) -> None:
+        self.currency_code = currency_code
+        super().__init__(self.code)
 
 
 def _clean(value: str | None, *, uppercase: bool = False) -> str | None:

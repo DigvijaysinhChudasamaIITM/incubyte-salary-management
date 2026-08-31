@@ -1,19 +1,47 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from salary_management.api.schemas import EmployeePageResponse
-from salary_management.application.employees import EmployeeService
+from salary_management.api.schemas import (
+    EmployeeCreateRequest,
+    EmployeePageResponse,
+    EmployeeResponse,
+)
+from salary_management.application.employees import EmployeeService, UnsupportedCurrency
 from salary_management.persistence.database import get_session
 from salary_management.persistence.employee_repository import (
+    EmployeeConflict,
     EmployeeRepository,
     EmployeeSortField,
     EmployeeStatus,
     SortDirection,
 )
+from salary_management.persistence.exchange_rate_repository import ExchangeRateRepository
 
 router = APIRouter(prefix="/api/employees", tags=["employees"])
+
+
+@router.post("", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
+def create_employee(
+    request: EmployeeCreateRequest,
+    session: Annotated[Session, Depends(get_session)],
+) -> EmployeeResponse:
+    try:
+        employee = EmployeeService(
+            EmployeeRepository(session), ExchangeRateRepository(session)
+        ).create(**request.model_dump())
+    except EmployeeConflict as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "employee_conflict", "fields": error.fields},
+        ) from None
+    except UnsupportedCurrency as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail={"code": error.code, "currency": error.currency_code},
+        ) from None
+    return EmployeeResponse.model_validate(employee, from_attributes=True)
 
 
 @router.get("", response_model=EmployeePageResponse)

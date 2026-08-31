@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 
 import { App } from "./App";
@@ -205,6 +205,170 @@ test("shows a retryable error when the backend request fails", async () => {
   expect(fetchMock).toHaveBeenCalledTimes(2);
 });
 
+test("creates an employee from supported currencies and refreshes the directory", async () => {
+  const created: Employee = {
+    ...asha,
+    employee_code: "NEW00001",
+    name: "New Employee",
+    email: "new.employee@example.com",
+  };
+  const fetchMock = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith("/api/metadata/currencies")) {
+      return Promise.resolve(jsonResponse({ currencies: ["CAD", "EUR", "GBP", "INR", "USD"] }));
+    }
+    if (init?.method === "POST") return Promise.resolve(jsonResponse(created, 201));
+    return Promise.resolve(response());
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  await screen.findByText("Asha Patel");
+
+  fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
+  const dialog = await screen.findByRole("dialog", { name: "Add employee" });
+  await waitFor(() => expect(within(dialog).getByLabelText("Currency")).toBeEnabled());
+  fillCreateForm(dialog);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Add employee" }));
+
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "New Employee was added successfully",
+  );
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  const postCall = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+  expect(postCall).toBeDefined();
+  expect(JSON.parse(String(postCall?.[1]?.body))).toMatchObject({
+    employee_code: "NEW00001",
+    salary_amount: "12345.67",
+    currency: "INR",
+  });
+  await waitFor(() => {
+    const directoryGets = fetchMock.mock.calls.filter(([input, init]) =>
+      String(input).includes("/api/employees?") && !init?.method
+    );
+    expect(directoryGets).toHaveLength(2);
+  });
+});
+
+test("opens with keyboard focus and closes with Escape", async () => {
+  vi.stubGlobal("fetch", createFormFetch(jsonResponse(asha, 201)));
+  render(<App />);
+  await screen.findByText("Asha Patel");
+
+  fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
+  const dialog = await screen.findByRole("dialog");
+
+  expect(within(dialog).getByLabelText("Employee code")).toHaveFocus();
+  fireEvent.keyDown(dialog, { key: "Escape" });
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("prevents double submission while employee creation is pending", async () => {
+  let resolveCreate!: (response: Response) => void;
+  const pendingCreate = new Promise<Response>((resolve) => { resolveCreate = resolve; });
+  const fetchMock = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+    if (String(input).endsWith("/api/metadata/currencies")) {
+      return Promise.resolve(jsonResponse({ currencies: ["INR"] }));
+    }
+    if (init?.method === "POST") return pendingCreate;
+    return Promise.resolve(response());
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  await screen.findByText("Asha Patel");
+  fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
+  const dialog = await screen.findByRole("dialog");
+  await waitFor(() => expect(within(dialog).getByLabelText("Currency")).toBeEnabled());
+  fillCreateForm(dialog);
+  const submit = within(dialog).getByRole("button", { name: "Add employee" });
+
+  fireEvent.click(submit);
+  fireEvent.click(submit);
+
+  expect(fetchMock.mock.calls.filter(([, init]) => init?.method === "POST")).toHaveLength(1);
+  expect(within(dialog).getByRole("button", { name: "Adding employee..." })).toBeDisabled();
+  resolveCreate(jsonResponse(asha, 201));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+
+test("shows duplicate conflicts at the relevant field", async () => {
+  const fetchMock = createFormFetch(
+    jsonResponse(
+      { detail: { code: "employee_conflict", fields: ["email"] } },
+      409,
+    ),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  await screen.findByText("Asha Patel");
+  fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
+  const dialog = await screen.findByRole("dialog");
+  await waitFor(() => expect(within(dialog).getByLabelText("Currency")).toBeEnabled());
+  fillCreateForm(dialog);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Add employee" }));
+
+  expect(await within(dialog).findByText("Email already exists.")).toBeInTheDocument();
+  expect(within(dialog).getByLabelText("Email")).toHaveAttribute("aria-invalid", "true");
+  expect(within(dialog).getByText("Resolve the duplicate value and try again.")).toBeInTheDocument();
+});
+
+test("shows backend validation and general create failures without closing the form", async () => {
+  const validationFetch = createFormFetch(
+    jsonResponse(
+      { detail: [{ loc: ["body", "email"], msg: "value is not a valid email address" }] },
+      422,
+    ),
+  );
+  vi.stubGlobal("fetch", validationFetch);
+  const { unmount } = render(<App />);
+  await screen.findByText("Asha Patel");
+  fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
+  let dialog = await screen.findByRole("dialog");
+  await waitFor(() => expect(within(dialog).getByLabelText("Currency")).toBeEnabled());
+  fillCreateForm(dialog);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Add employee" }));
+  expect(await within(dialog).findByText("value is not a valid email address")).toBeInTheDocument();
+  unmount();
+
+  vi.stubGlobal("fetch", createFormFetch(jsonResponse({ detail: "failure" }, 500)));
+  render(<App />);
+  await screen.findByText("Asha Patel");
+  fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
+  dialog = await screen.findByRole("dialog");
+  await waitFor(() => expect(within(dialog).getByLabelText("Currency")).toBeEnabled());
+  fillCreateForm(dialog);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Add employee" }));
+  expect(await within(dialog).findByText("Employee could not be created. Try again.")).toBeInTheDocument();
+});
+
 function lastQuery(fetchMock: ReturnType<typeof vi.fn>): URLSearchParams {
   return new URL(String(fetchMock.mock.lastCall?.[0]), "http://localhost").searchParams;
+}
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+  } as Response;
+}
+
+function createFormFetch(createResponse: Response) {
+  return vi.fn((input: string | URL | Request, init?: RequestInit) => {
+    if (String(input).endsWith("/api/metadata/currencies")) {
+      return Promise.resolve(jsonResponse({ currencies: ["INR", "USD"] }));
+    }
+    if (init?.method === "POST") return Promise.resolve(createResponse);
+    return Promise.resolve(response());
+  });
+}
+
+function fillCreateForm(dialog: HTMLElement) {
+  fireEvent.change(within(dialog).getByLabelText("Employee code"), { target: { value: "NEW00001" } });
+  fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "New Employee" } });
+  fireEvent.change(within(dialog).getByLabelText("Email"), { target: { value: "new.employee@example.com" } });
+  fireEvent.change(within(dialog).getByLabelText("Country"), { target: { value: "IN" } });
+  fireEvent.change(within(dialog).getByLabelText("Department"), { target: { value: "Engineering" } });
+  fireEvent.change(within(dialog).getByLabelText("Job title"), { target: { value: "Engineer" } });
+  fireEvent.change(within(dialog).getByLabelText("Salary amount"), { target: { value: "12345.67" } });
+  fireEvent.change(within(dialog).getByLabelText("Currency"), { target: { value: "INR" } });
 }

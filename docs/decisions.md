@@ -132,14 +132,16 @@ for the MVP.
 
 ### Decision
 
-Generate a fixed set of employee codes `EMP00001` through `EMP10000`. A repeat seed is a
-no-op only when all 10,000 deterministic employee codes are present. Any partial or unrelated
-employee dataset blocks seeding with an explicit error.
+Generate a fixed set of employee codes `EMP00001` through `EMP10000`. A repeat seed is a no-op when
+all 10,000 deterministic codes are present and tolerates additional application-created employees.
+Any partial deterministic code set blocks seeding with an explicit error. Existing seeded records
+are never overwritten, so later salary or active-state changes remain intact.
 
 ### Reason
 
-This makes normal repeat execution idempotent while preventing the seed command from silently
-mixing generated assessment data into an ambiguous existing dataset.
+This makes normal repeat execution idempotent without making legitimate creates incompatible with
+operations. Detecting partial deterministic data still prevents silently accepting an interrupted
+seed, while non-destructive recognition avoids undoing application behavior.
 
 ---
 

@@ -10,10 +10,9 @@ Implementation in progress.
 **Live demo:** https://incubyte-salary-management-eight.vercel.app
 
 Incubyte-confirmed MVP requirements and separate engineering decisions are documented under
-`/docs`. The current live slice includes the verified directory and server-side sorting/status
-controls. CRUD, deactivation, and compensation-dashboard work remains planned; the deterministic
-exchange-rate foundation is implemented locally but requires an explicit migration and seed before
-deployment.
+`/docs`. The current production slice includes the verified directory, server-side sorting/status
+controls, and deterministic exchange-rate foundation. Employee creation is implemented locally;
+salary editing, deactivation, and the compensation dashboard remain planned.
 
 ## Prerequisites
 
@@ -42,8 +41,9 @@ uvicorn salary_management.main:app --reload
 
 The migration and seed commands use `DATABASE_URL` when set and otherwise use
 `sqlite:///./salary_management.db`. Repeating the seed is a safe no-op when the complete employee
-and exchange-rate datasets exist; partial, unrelated, or conflicting deterministic data causes an
-explicit error. The USD, INR, GBP, EUR, and CAD rates are fixed assessment fixtures dated
+and exchange-rate datasets exist, even after legitimate employees are created. A partial
+deterministic employee set or conflicting FX fixture causes an explicit error. The USD, INR, GBP,
+EUR, and CAD rates are fixed assessment fixtures dated
 2026-08-31—not current market rates and not suitable for financial settlement.
 
 In a second terminal, install and start the frontend:
@@ -78,6 +78,11 @@ Browse employees at `GET /api/employees`. The endpoint accepts `page`, `page_siz
 100), `search`, `country`, `department`, `status`, `sort_by`, and `sort_direction` query
 parameters. Search matches employee code, name, and email. Status defaults to active employees;
 supported values are `active`, `inactive`, and `all`.
+
+Create an active employee with `POST /api/employees`. The request requires employee code, name,
+email, two-letter country, department, job title, positive decimal salary amount, and a currency
+returned by `GET /api/metadata/currencies`. Duplicate employee code/email returns structured
+`409`; invalid input or an unsupported currency returns `422`.
 
 ## Environment variables
 
@@ -136,9 +141,10 @@ If demonstration data is required, run the seed once in the same configured shel
 python -m salary_management.seed
 ```
 
-The seed is not a Vercel build or startup command. Repeating it against the complete deterministic
-dataset is a no-op; partial or unrelated employee data is rejected. Never paste either Neon URL
-into `VITE_API_BASE_URL`, committed files, build logs, or browser-visible settings.
+The seed is not a Vercel build or startup command. Repeating it ensures the complete deterministic
+set exists while leaving additional application-created employees and later salary/status changes
+untouched; an incomplete deterministic set is rejected. Never paste either Neon URL into
+`VITE_API_BASE_URL`, committed files, build logs, or browser-visible settings.
 
 - `GET /health` is a process liveness check and does not query the database.
 - `GET /ready` checks database connectivity and returns `503` without exposing connection details

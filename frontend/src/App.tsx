@@ -3,6 +3,7 @@ import {
   ArrowUp,
   ChevronLeft,
   ChevronRight,
+  Plus,
   RefreshCw,
   Search,
   SlidersHorizontal,
@@ -17,7 +18,9 @@ import {
   EmployeeSortField,
   EmployeeStatus,
   fetchEmployees,
+  fetchSupportedCurrencies,
 } from "./api/employees";
+import { EmployeeCreateDialog } from "./EmployeeCreateDialog";
 
 const PAGE_SIZE = 25;
 const COUNTRIES = [
@@ -46,6 +49,11 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [reload, setReload] = useState(0);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [currencies, setCurrencies] = useState<string[]>([]);
+  const [currenciesLoading, setCurrenciesLoading] = useState(false);
+  const [currenciesError, setCurrenciesError] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,6 +69,19 @@ export function App() {
       });
     return () => controller.abort();
   }, [query, reload]);
+
+  function openCreate() {
+    setCreateOpen(true);
+    if (currencies.length > 0 || currenciesLoading) return;
+    setCurrenciesLoading(true);
+    setCurrenciesError(false);
+    fetchSupportedCurrencies()
+      .then(setCurrencies)
+      .catch(() => {
+        setCurrenciesError(true);
+      })
+      .finally(() => setCurrenciesLoading(false));
+  }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,6 +131,13 @@ export function App() {
     setReload((value) => value + 1);
   }
 
+  function employeeCreated(employee: Employee) {
+    setCreateOpen(false);
+    setSuccessMessage(`${employee.name} was added successfully.`);
+    beginRequest();
+    setReload((value) => value + 1);
+  }
+
   const hasFilters = Boolean(
     query.search || query.country || query.department || query.status !== "active",
   );
@@ -130,11 +158,19 @@ export function App() {
             <p className="eyebrow">People</p>
             <h1>Employees</h1>
           </div>
-          <div className="record-count" aria-live="polite">
-            <span>{data?.total.toLocaleString() ?? "--"}</span>
-            <small>records</small>
+          <div className="heading-actions">
+            <div className="record-count" aria-live="polite">
+              <span>{data?.total.toLocaleString() ?? "--"}</span>
+              <small>records</small>
+            </div>
+            <button className="primary-button" type="button" onClick={openCreate}>
+              <Plus size={17} aria-hidden="true" />
+              Add employee
+            </button>
           </div>
         </div>
+
+        {successMessage && <p className="success-banner" role="status">{successMessage}</p>}
 
         <section className="filter-bar" aria-label="Employee filters">
           <form className="search-control" onSubmit={submitSearch}>
@@ -251,6 +287,15 @@ export function App() {
           )}
         </section>
       </main>
+      {createOpen && (
+        <EmployeeCreateDialog
+          currencies={currencies}
+          currenciesLoading={currenciesLoading}
+          currenciesError={currenciesError}
+          onClose={() => setCreateOpen(false)}
+          onCreated={employeeCreated}
+        />
+      )}
     </div>
   );
 }

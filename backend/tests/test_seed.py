@@ -39,14 +39,14 @@ def test_seeds_exactly_ten_thousand_employees_and_is_repeatable(session: Session
         seed_employees(session)
 
 
-def test_refuses_to_mix_seed_data_with_existing_employees(session: Session) -> None:
-    session.add(employee(99_999))
+def test_refuses_incomplete_deterministic_employee_seed(session: Session) -> None:
+    session.add(employee(1))
     session.commit()
 
     try:
         seed_employees(session)
     except SeedDataConflict as error:
-        assert "does not match" in str(error)
+        assert "incomplete" in str(error)
     else:
         raise AssertionError("Expected partial employee data to block deterministic seeding")
 
