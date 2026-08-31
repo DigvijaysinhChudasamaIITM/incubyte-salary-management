@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Index, Numeric, String
+from sqlalchemy import Boolean, CheckConstraint, Index, Numeric, String, true
 from sqlalchemy.orm import Mapped, mapped_column
 
 from salary_management.persistence.database import Base
@@ -24,3 +24,6 @@ class Employee(Base):
     job_title: Mapped[str] = mapped_column(String(100))
     salary_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2))
     currency: Mapped[str] = mapped_column(String(3))
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=true(), index=True
+    )

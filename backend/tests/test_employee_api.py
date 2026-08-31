@@ -36,6 +36,7 @@ def test_returns_paginated_employee_salary_data(session: Session) -> None:
                 "job_title": "Engineer",
                 "salary_amount": "75000.25",
                 "currency": "USD",
+                "is_active": True,
             }
         ],
         "page": 2,
@@ -68,3 +69,34 @@ def test_rejects_invalid_pagination(session: Session) -> None:
     response = client_for(session).get("/api/employees?page=0&page_size=101")
 
     assert response.status_code == 422
+
+
+def test_applies_sorting_and_status_query_parameters(session: Session) -> None:
+    session.add_all(
+        [
+            employee(1, name="Morgan", is_active=False),
+            employee(2, name="Asha"),
+            employee(3, name="Zara"),
+        ]
+    )
+    session.commit()
+
+    response = client_for(session).get(
+        "/api/employees?status=all&sort_by=name&sort_direction=desc"
+    )
+
+    assert response.status_code == 200
+    assert [item["employee_code"] for item in response.json()["items"]] == [
+        "EMP00003",
+        "EMP00001",
+        "EMP00002",
+    ]
+    assert response.json()["items"][1]["is_active"] is False
+
+
+def test_rejects_unsupported_sorting_and_status_values(session: Session) -> None:
+    client = client_for(session)
+
+    assert client.get("/api/employees?sort_by=email").status_code == 422
+    assert client.get("/api/employees?sort_direction=sideways").status_code == 422
+    assert client.get("/api/employees?status=deleted").status_code == 422

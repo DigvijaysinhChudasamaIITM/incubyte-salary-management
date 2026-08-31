@@ -45,8 +45,8 @@ only when another behavior or persistence implementation creates a demonstrated 
 ## Employee Data
 
 The current employee record contains employee code, name, email, country, department, job title,
-salary amount, and currency. It is deliberately a browsing foundation, not a final compensation
-model.
+salary amount, currency, and active status. It is deliberately a browsing foundation, not a final
+compensation model.
 
 Salary is represented as Python `Decimal` and database `NUMERIC(14,2)`. Binary floating point is
 not used for storage, seeding, filtering, or API serialization.
@@ -58,6 +58,7 @@ Database integrity currently includes:
 - positive salary check;
 - three-character currency check;
 - indexes on name, country, and department;
+- an index on active status;
 - a combined country/department index for the supported filter combination.
 
 Requiring salary amount to be greater than zero is a pragmatic current domain assumption, not an
@@ -68,10 +69,12 @@ It does not warrant another clarification request unless it becomes material to 
 ## Browsing Queries
 
 `GET /api/employees` uses server-side pagination with a default page size of 25 and a maximum of
-100. The repository runs one filtered count query and one bounded, employee-code-ordered data
-query. Search is case-insensitive across employee code, name, and email; SQL wildcard characters
-are escaped and treated literally. Country and department filters are applied in SQL. The browser
-never needs the full 10,000-record dataset.
+100. The repository runs one filtered count query and one bounded data query. Search is
+case-insensitive across employee code, name, and email; SQL wildcard characters are escaped and
+treated literally. Country, department, and active/inactive/all status filters are applied in SQL.
+Sorting is allowlisted to employee code, name, country, department, and job title; ascending and
+descending non-code sorts append employee code ascending as a deterministic tie-breaker. The
+browser never needs the full 10,000-record dataset.
 
 ## Seed Strategy
 
@@ -118,8 +121,9 @@ the readiness probe distinguishes application availability from database connect
 ### Data Model and Migration
 
 - Keep `employees.salary_amount` and `employees.currency` as the native-currency source of truth.
-- Add non-null `employees.is_active`, backfill existing rows to `true`, and index active-state paths
-  used by directory and analytics queries. Never physically delete an employee in the MVP.
+- `employees.is_active` is implemented as non-null and indexed; migration `20260831_02` backfills
+  existing rows to `true`. The current API supports active/inactive/all filtering. The later
+  deactivate workflow must update this flag and never physically delete an employee.
 - Preserve employee-code and email uniqueness across inactive records.
 - Add `exchange_rates(currency_code, rate_to_usd, effective_date)` using decimal-safe precision,
   including USD at `1`. The deterministic seed owns the fixed dated rates; no network call or

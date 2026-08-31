@@ -21,6 +21,8 @@ def test_seeds_exactly_ten_thousand_employees_and_is_repeatable(session: Session
     last = session.scalar(select(Employee).where(Employee.employee_code == "EMP10000"))
     assert first is not None and first.email == "employee00001@example.com"
     assert last is not None and last.email == "employee10000@example.com"
+    assert first.is_active is True
+    assert last.is_active is True
 
     first.employee_code = "EMP0000A"
     session.commit()
@@ -38,3 +40,15 @@ def test_refuses_to_mix_seed_data_with_existing_employees(session: Session) -> N
         assert "does not match" in str(error)
     else:
         raise AssertionError("Expected partial employee data to block deterministic seeding")
+
+
+def test_repeat_seed_does_not_reactivate_an_employee(session: Session) -> None:
+    seed_employees(session)
+    session.commit()
+    first = session.scalar(select(Employee).where(Employee.employee_code == "EMP00001"))
+    assert first is not None
+    first.is_active = False
+    session.commit()
+
+    assert seed_employees(session) == 0
+    assert first.is_active is False

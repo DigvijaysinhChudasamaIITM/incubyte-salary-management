@@ -1,7 +1,13 @@
 from dataclasses import dataclass
 from math import ceil
 
-from salary_management.persistence.employee_repository import EmployeeQuery, EmployeeRepository
+from salary_management.persistence.employee_repository import (
+    EmployeeQuery,
+    EmployeeRepository,
+    EmployeeSortField,
+    EmployeeStatus,
+    SortDirection,
+)
 from salary_management.persistence.models import Employee
 
 
@@ -26,6 +32,9 @@ class EmployeeService:
         search: str | None = None,
         country: str | None = None,
         department: str | None = None,
+        sort_by: EmployeeSortField = "employee_code",
+        sort_direction: SortDirection = "asc",
+        status: EmployeeStatus = "active",
     ) -> EmployeePage:
         query = EmployeeQuery(
             page=page,
@@ -33,6 +42,9 @@ class EmployeeService:
             search=_clean(search),
             country=_clean(country, uppercase=True),
             department=_clean(department),
+            sort_by=sort_by,
+            sort_direction=sort_direction,
+            status=status,
         )
         items, total = self.repository.list(query)
         return EmployeePage(

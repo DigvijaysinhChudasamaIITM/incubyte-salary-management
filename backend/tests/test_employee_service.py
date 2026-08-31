@@ -26,3 +26,25 @@ def test_service_normalizes_filters_and_calculates_page_count(session: Session) 
     assert [item.employee_code for item in result.items] == ["EMP00001"]
     assert result.total == 2
     assert result.total_pages == 2
+
+
+def test_service_applies_status_and_sorting(session: Session) -> None:
+    session.add_all(
+        [
+            employee(1, name="Asha", is_active=False),
+            employee(2, name="Morgan", is_active=False),
+            employee(3, name="Zara"),
+        ]
+    )
+    session.commit()
+
+    result = EmployeeService(EmployeeRepository(session)).browse(
+        page=1,
+        page_size=10,
+        status="inactive",
+        sort_by="name",
+        sort_direction="desc",
+    )
+
+    assert [item.employee_code for item in result.items] == ["EMP00002", "EMP00001"]
+    assert result.total == 2

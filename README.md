@@ -71,8 +71,9 @@ npm run build
 ```
 
 Browse employees at `GET /api/employees`. The endpoint accepts `page`, `page_size` (up to
-100), `search`, `country`, and `department` query parameters. Search matches employee code,
-name, and email.
+100), `search`, `country`, `department`, `status`, `sort_by`, and `sort_direction` query
+parameters. Search matches employee code, name, and email. Status defaults to active employees;
+supported values are `active`, `inactive`, and `all`.
 
 ## Environment variables
 

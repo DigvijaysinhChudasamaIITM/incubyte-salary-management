@@ -14,6 +14,7 @@ class EmployeeResponse(BaseModel):
     job_title: str
     salary_amount: Decimal
     currency: str
+    is_active: bool
 
 
 class EmployeePageResponse(BaseModel):

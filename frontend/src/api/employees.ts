@@ -7,6 +7,7 @@ export interface Employee {
   job_title: string;
   salary_amount: string;
   currency: string;
+  is_active: boolean;
 }
 
 export interface EmployeePage {

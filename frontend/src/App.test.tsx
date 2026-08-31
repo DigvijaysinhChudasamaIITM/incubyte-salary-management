@@ -13,6 +13,7 @@ const asha: Employee = {
   job_title: "Senior Engineer",
   salary_amount: "75000.25",
   currency: "INR",
+  is_active: true,
 };
 
 afterEach(() => {

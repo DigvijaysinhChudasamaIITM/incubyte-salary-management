@@ -358,3 +358,31 @@ explicitly documented as candidate-owned decisions rather than attributed to Inc
 
 Documentation was checked against the current schema, API, repository, and UI so planned work is
 not presented as implemented. No product or deployment code was changed during this planning phase.
+
+---
+
+## Entry 014 - Employee Status and Stable Sorting
+
+**Problem**
+
+Implement the first confirmed-MVP slice without pulling later CRUD, FX, analytics, or dashboard
+work into scope.
+
+**AI Assistance**
+
+AI traced the model, Alembic, seed, repository, service, API, and frontend contract boundaries;
+proposed a backfilled Boolean status, allowlisted query literals, and deterministic secondary
+ordering; and added focused migration and behavior tests.
+
+**Human Decision**
+
+Default browsing to active employees, expose explicit active/inactive/all filters, allow sorting by
+employee code, name, country, department, and job title, and use employee code ascending as the
+tie-breaker for every non-code sort. Repeat seeding recognizes the deterministic employee set
+without reactivating a deliberately inactive record.
+
+**Verification**
+
+Fresh migration and a 10,000-row pre-change migration prove the schema and backfill. Repository,
+service, and API tests cover both directions, stable page ties, status filters, and rejected query
+values. Backend and frontend quality suites verify the expanded response contract.

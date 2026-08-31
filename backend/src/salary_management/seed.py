@@ -61,6 +61,7 @@ def _employee(number: int) -> Employee:
         job_title=JOB_TITLES[title_index],
         salary_amount=salary,
         currency=currency,
+        is_active=True,
     )
 
 

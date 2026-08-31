@@ -29,6 +29,8 @@ def employee(
     name: str | None = None,
     country: str = "US",
     department: str = "Engineering",
+    job_title: str = "Engineer",
+    is_active: bool = True,
 ) -> Employee:
     return Employee(
         employee_code=f"EMP{number:05d}",
@@ -36,7 +38,8 @@ def employee(
         email=f"employee{number}@example.com",
         country=country,
         department=department,
-        job_title="Engineer",
+        job_title=job_title,
         salary_amount=Decimal("75000.25"),
         currency="USD",
+        is_active=is_active,
     )
