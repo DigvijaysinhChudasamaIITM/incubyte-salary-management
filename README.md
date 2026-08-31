@@ -7,6 +7,8 @@ application supporting approximately 10,000 employees.
 
 Implementation in progress.
 
+**Live demo:** https://incubyte-salary-management-eight.vercel.app
+
 Product requirements and engineering decisions are documented under `/docs`.
 
 Some product behaviours remain provisional while clarification from Incubyte
@@ -143,3 +145,9 @@ into `VITE_API_BASE_URL`, committed files, build logs, or browser-visible settin
 After deployment, verify the frontend, `/api/employees?page=1&page_size=25`, `/health`, and
 `/ready` on the same Vercel domain. Vercel manages TLS and Python function execution; Neon manages
 Postgres persistence and backups according to the selected free-plan capabilities.
+
+The production deployment has been manually verified end to end: the frontend loads at `/`, the
+health and database-readiness probes succeed, and the paginated API reports all 10,000 seeded
+employees. Employee-code search, country and department filters (individually and combined), the
+no-result state, salary/currency formatting, and server-side pagination across multiple pages in
+both directions all work against Neon over the same origin.

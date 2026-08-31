@@ -244,6 +244,14 @@ Vercel Services is a Beta feature and requires the dashboard Framework Preset to
 The frontend and backend deploy together, and routing into a selected service is final rather than
 falling through to another service.
 
+### Production Outcome
+
+The topology is live at https://incubyte-salary-management-eight.vercel.app. Production evidence
+resolved five deployment faults in sequence: an ambiguous uv path dependency, a malformed
+`DATABASE_URL`, mixed-framework output ownership, the need for separate Vercel Services, and a
+top-level matcher that handled nested frontend paths but omitted bare `/`. Each correction followed
+build logs or direct route probes rather than speculative application changes.
+
 ---
 
 ## Open Decisions

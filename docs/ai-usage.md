@@ -286,3 +286,35 @@ package mapping and Neon configuration, and leave migrations and seeding explici
 The service schema and route ownership are checked alongside both application quality suites, a
 Vite production build, diff validation, and secret scanning. The dashboard preset and hosted
 service deployment remain production checks.
+
+---
+
+## Entry 012 - Production Deployment Diagnosis and Verification
+
+**Problem**
+
+Several independent deployment faults appeared successively: uv rejected a path whose inferred
+name disagreed with backend metadata; a malformed Vercel `DATABASE_URL` caused an import-time
+failure; mixed FastAPI/Vite detection did not publish the nested frontend output; and the initial
+Services catch-all matched nested frontend paths but not `/`.
+
+**AI Assistance**
+
+AI correlated Vercel build/runtime evidence and direct production route probes with the committed
+configuration. Fixes were intentionally narrow: explicit uv package mapping, corrected environment
+configuration, separate Vite and FastAPI services, and the documented `/(.*)` root matcher.
+
+**Human Decision**
+
+Accept changes only after the preceding production signal identified a concrete failure boundary.
+Keep application behavior, same-origin requests, Neon persistence, and explicit migration/seed
+operations unchanged.
+
+**Verification**
+
+The live deployment at https://incubyte-salary-management-eight.vercel.app serves the frontend,
+healthy API probes, and 10,000 Neon-backed employee records. Search, individual and combined
+filters, empty results, salary/currency presentation, and server-side pagination across multiple
+pages in both directions were manually verified. This sequence reinforced that production logs
+and observable routes should drive deployment fixes rather than speculative changes across
+application layers.

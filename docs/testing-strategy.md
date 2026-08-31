@@ -55,6 +55,16 @@ frontend API base, and install the backend through the root uv package mapping.
 Live Neon migration and Vercel routing are final deployment checks because credentials and hosted
 infrastructure are deliberately unavailable to repository tests.
 
+## Production Verification
+
+The live deployment at https://incubyte-salary-management-eight.vercel.app was manually verified
+after automated checks passed. `/` serves Vite; `/api/health` and `/api/ready` return healthy
+responses; and the employee endpoint returns 25 records with a total of 10,000. Employee-code
+search, country filtering, department filtering, combined filters, the empty state,
+salary/currency formatting, and server-side pagination across multiple pages in both directions
+were exercised through the UI. The successful readiness response and employee queries confirm
+production Neon connectivity without exposing connection details.
+
 ## Continuous Integration
 
 GitHub Actions runs backend Ruff and pytest checks plus frontend Vitest, ESLint, and

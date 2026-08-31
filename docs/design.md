@@ -107,6 +107,12 @@ runtime dependency list. Neon supplies a pooled TLS connection string for
 and optional deterministic seeding use a direct Neon connection from a trusted operator shell and
 remain outside Vercel build and function startup.
 
+The deployed topology is verified at https://incubyte-salary-management-eight.vercel.app. Vite
+owns `/` and frontend paths, while FastAPI owns `/api/*`, `/health`, and `/ready`. Production reads
+10,000 seeded employees from Neon, and the frontend uses relative API URLs on the shared origin.
+As with any serverless deployment, the first request after inactivity may experience a cold start;
+the readiness probe distinguishes application availability from database connectivity.
+
 ## Pending Product Decisions
 
 The following remain intentionally unresolved pending Incubyte's answers:
