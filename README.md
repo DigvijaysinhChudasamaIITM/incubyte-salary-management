@@ -89,25 +89,23 @@ frontend. Do not put secrets in any `VITE_` variable because browser bundles are
 
 ## Vercel and Neon deployment
 
-The selected production topology is one Vercel project backed by Neon Postgres. Vercel publishes
-the React build at `/`, packages `api/index.py` as a Python function for `/api/*`, and rewrites the
-public `/health` and `/ready` probes to that function. The project remains same-origin, so do not
-set `VITE_API_BASE_URL` or `CORS_ALLOWED_ORIGINS`.
+The selected production topology is one Vercel Services project backed by Neon Postgres. Vercel
+builds `frontend/` as the primary Vite service at `/` and the existing `api/index.py` FastAPI
+application as the backend service for `/api/*`, `/health`, and `/ready`. The services share one
+domain, so do not set `VITE_API_BASE_URL` or `CORS_ALLOWED_ORIGINS`.
 
 Import the Git repository into Vercel with these settings:
 
 - project root directory: repository root (`.`);
-- framework preset: Other;
+- framework preset: Services;
 - Node.js version: 22;
-- build command: `npm --prefix frontend ci && npm --prefix frontend run build`;
-- output directory: `frontend/dist`;
-- install command: leave at the Vercel default;
+- build, output, and install commands: leave at the service defaults;
 - production environment variable: `DATABASE_URL` set to the Neon pooled connection string.
 
-The build and output values are committed in `vercel.json`; dashboard values should not override
-them. `.python-version` selects Python 3.12. The root `pyproject.toml` declares
-`salary-management-api` and maps it to `./backend` for uv; the backend package remains authoritative
-for its runtime dependencies.
+The service roots, frameworks, entrypoint, and public routing are committed in `vercel.json`;
+dashboard values should not override them. `.python-version` selects Python 3.12. The root
+`pyproject.toml` declares `salary-management-api` and maps it to `./backend` for uv; the backend
+package remains authoritative for its runtime dependencies.
 
 Create a Neon project and copy both connection strings from its Connect dialog. Use the pooled
 connection string (hostname contains `-pooler`) as Vercel's `DATABASE_URL`, preserving

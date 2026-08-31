@@ -49,8 +49,9 @@ the configured API origin, that the default build retains relative API URLs, and
 database configured through `DATABASE_URL` can migrate to the current Alembic head.
 
 The Vercel adapter is checked for an exported FastAPI application and deployment probe aliases.
-The committed Vercel configuration must parse successfully, build the nested frontend, retain an
-unset same-origin frontend API base, and install the backend from the root dependency file.
+The committed Vercel configuration must parse successfully, define independent Vite and FastAPI
+services, route the frontend, API, and probes to their intended owners, retain an unset same-origin
+frontend API base, and install the backend through the root uv package mapping.
 Live Neon migration and Vercel routing are final deployment checks because credentials and hosted
 infrastructure are deliberately unavailable to repository tests.
 

@@ -222,6 +222,30 @@ interpret `[tool.uv.sources]`, so the deployment install path assumes Vercel's c
 
 ---
 
+## D012 - Separate Vite and FastAPI Vercel Services
+
+**Status:** Accepted
+
+### Decision
+
+Deploy `frontend/` and the existing root FastAPI entrypoint as independent services in one Vercel
+project. Route `/api/*`, `/health`, and `/ready` to the backend service and use the Vite service as
+the `/` catch-all. Keep the project domain, backend package boundary, and Neon configuration.
+
+### Reason
+
+Mixed framework auto-detection treated FastAPI as the primary application and did not publish the
+nested Vite output, even though the frontend build succeeded. Services give each application its
+own framework build and merge them through an explicit public route table.
+
+### Trade-offs
+
+Vercel Services is a Beta feature and requires the dashboard Framework Preset to be `Services`.
+The frontend and backend deploy together, and routing into a selected service is final rather than
+falling through to another service.
+
+---
+
 ## Open Decisions
 
 The following remain intentionally unresolved until clarification is received:

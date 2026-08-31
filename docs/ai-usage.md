@@ -260,3 +260,29 @@ Use a non-package root deployment project that depends on `salary-management-api
 
 The change is checked with uv dependency resolution when available, the full backend and frontend
 quality suites, the production and Vercel build commands, diff validation, and secret scanning.
+
+---
+
+## Entry 011 - Vercel Services Deployment Split
+
+**Problem**
+
+The mixed FastAPI/Vite deployment built the nested frontend but exposed the project primarily as a
+FastAPI application, leaving the generated `frontend/dist/index.html` unavailable at runtime.
+
+**AI Assistance**
+
+AI reviewed current Vercel Services, service routing, Vite, and FastAPI documentation and mapped
+the existing application boundaries into separate framework-owned builds without moving code.
+
+**Human Decision**
+
+Use one Vercel Services project with `frontend/` as the root Vite service and the existing root
+FastAPI adapter as the backend service. Keep public API and probe routing same-origin, retain uv
+package mapping and Neon configuration, and leave migrations and seeding explicit.
+
+**Verification**
+
+The service schema and route ownership are checked alongside both application quality suites, a
+Vite production build, diff validation, and secret scanning. The dashboard preset and hosted
+service deployment remain production checks.

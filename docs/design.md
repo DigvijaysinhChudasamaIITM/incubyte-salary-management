@@ -94,11 +94,11 @@ startup. This prevents web-process restarts or horizontal scaling from mutating 
 
 ## Deployment Topology
 
-The selected topology is one Vercel project and one Neon Postgres database. Vercel serves the
-compiled React assets at the project domain and packages the existing FastAPI application through
-a thin `api/index.py` entrypoint. `/api/*` reaches the Python function directly; Vercel rewrites
-`/health` and `/ready` to deployment aliases on the same function. Browser requests therefore
-remain same-origin and require neither `VITE_API_BASE_URL` nor CORS configuration.
+The selected topology is one Vercel Services project and one Neon Postgres database. Vercel builds
+`frontend/` as a Vite service at `/` and packages the existing FastAPI application as a separate
+service through the thin `api/index.py` entrypoint. Ordered public service rewrites send `/api/*`,
+`/health`, and `/ready` to FastAPI and all other paths to Vite. Browser requests therefore remain
+same-origin and require neither `VITE_API_BASE_URL` nor CORS configuration.
 
 Vercel resolves the root `pyproject.toml` with uv, which maps the declared
 `salary-management-api` dependency to the existing `./backend` project rather than duplicating its
