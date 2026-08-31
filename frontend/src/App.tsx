@@ -1,4 +1,6 @@
 import {
+  ArrowDown,
+  ArrowUp,
   ChevronLeft,
   ChevronRight,
   RefreshCw,
@@ -8,7 +10,14 @@ import {
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
-import { Employee, EmployeePage, EmployeeQuery, fetchEmployees } from "./api/employees";
+import {
+  Employee,
+  EmployeePage,
+  EmployeeQuery,
+  EmployeeSortField,
+  EmployeeStatus,
+  fetchEmployees,
+} from "./api/employees";
 
 const PAGE_SIZE = 25;
 const COUNTRIES = [
@@ -25,6 +34,9 @@ const initialQuery: EmployeeQuery = {
   search: "",
   country: "",
   department: "",
+  sortBy: "employee_code",
+  sortDirection: "asc",
+  status: "active",
 };
 
 export function App() {
@@ -61,6 +73,22 @@ export function App() {
     setQuery((current) => ({ ...current, [filter]: value, page: 1 }));
   }
 
+  function setStatus(status: EmployeeStatus) {
+    beginRequest();
+    setQuery((current) => ({ ...current, status, page: 1 }));
+  }
+
+  function setSort(sortBy: EmployeeSortField) {
+    beginRequest();
+    setQuery((current) => ({
+      ...current,
+      sortBy,
+      sortDirection:
+        current.sortBy === sortBy && current.sortDirection === "asc" ? "desc" : "asc",
+      page: 1,
+    }));
+  }
+
   function clearFilters() {
     beginRequest();
     setSearchDraft("");
@@ -82,7 +110,9 @@ export function App() {
     setReload((value) => value + 1);
   }
 
-  const hasFilters = Boolean(query.search || query.country || query.department);
+  const hasFilters = Boolean(
+    query.search || query.country || query.department || query.status !== "active",
+  );
 
   return (
     <div className="app-shell">
@@ -133,6 +163,20 @@ export function App() {
             >
               <option value="">All countries</option>
               {COUNTRIES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+            </select>
+          </div>
+
+          <div className="select-control">
+            <label htmlFor="status-filter">Status</label>
+            <select
+              id="status-filter"
+              value={query.status}
+              onChange={(event) => setStatus(event.target.value as EmployeeStatus)}
+              disabled={loading}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="all">All</option>
             </select>
           </div>
 
@@ -189,7 +233,13 @@ export function App() {
               {hasFilters && <button type="button" onClick={clearFilters}>Clear filters</button>}
             </div>
           ) : data ? (
-            <EmployeeTable employees={data.items} loading={loading} />
+            <EmployeeTable
+              employees={data.items}
+              loading={loading}
+              sortBy={query.sortBy}
+              sortDirection={query.sortDirection}
+              onSort={setSort}
+            />
           ) : null}
 
           {data && data.items.length > 0 && !error && (
@@ -205,17 +255,50 @@ export function App() {
   );
 }
 
-function EmployeeTable({ employees, loading }: { employees: Employee[]; loading: boolean }) {
+const SORTABLE_COLUMNS: ReadonlyArray<{ field: EmployeeSortField; label: string }> = [
+  { field: "name", label: "Employee" },
+  { field: "employee_code", label: "Code" },
+  { field: "country", label: "Country" },
+  { field: "department", label: "Department" },
+  { field: "job_title", label: "Job title" },
+];
+
+function EmployeeTable({ employees, loading, sortBy, sortDirection, onSort }: {
+  employees: Employee[];
+  loading: boolean;
+  sortBy: EmployeeSortField;
+  sortDirection: "asc" | "desc";
+  onSort: (sortBy: EmployeeSortField) => void;
+}) {
   return (
     <div className="table-scroll" aria-busy={loading}>
       <table>
         <thead>
           <tr>
-            <th scope="col">Employee</th>
-            <th scope="col">Code</th>
-            <th scope="col">Country</th>
-            <th scope="col">Department</th>
-            <th scope="col">Job title</th>
+            {SORTABLE_COLUMNS.map(({ field, label }) => {
+              const selected = sortBy === field;
+              return (
+                <th
+                  key={field}
+                  scope="col"
+                  aria-sort={selected ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                >
+                  <button
+                    className="sort-button"
+                    type="button"
+                    onClick={() => onSort(field)}
+                    disabled={loading}
+                  >
+                    {label}
+                    {selected && (
+                      sortDirection === "asc"
+                        ? <ArrowUp size={14} aria-hidden="true" />
+                        : <ArrowDown size={14} aria-hidden="true" />
+                    )}
+                  </button>
+                </th>
+              );
+            })}
             <th scope="col" className="salary-column">Salary</th>
           </tr>
         </thead>

@@ -18,12 +18,24 @@ export interface EmployeePage {
   total_pages: number;
 }
 
+export type EmployeeSortField =
+  | "employee_code"
+  | "name"
+  | "country"
+  | "department"
+  | "job_title";
+export type SortDirection = "asc" | "desc";
+export type EmployeeStatus = "active" | "inactive" | "all";
+
 export interface EmployeeQuery {
   page: number;
   pageSize: number;
   search: string;
   country: string;
   department: string;
+  sortBy: EmployeeSortField;
+  sortDirection: SortDirection;
+  status: EmployeeStatus;
 }
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
@@ -39,6 +51,9 @@ export async function fetchEmployees(
   const parameters = new URLSearchParams({
     page: String(query.page),
     page_size: String(query.pageSize),
+    sort_by: query.sortBy,
+    sort_direction: query.sortDirection,
+    status: query.status,
   });
   if (query.search) parameters.set("search", query.search);
   if (query.country) parameters.set("country", query.country);

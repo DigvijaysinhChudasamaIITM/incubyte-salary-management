@@ -139,7 +139,7 @@ h1 {
 
 .filter-bar {
   display: grid;
-  grid-template-columns: minmax(18rem, 1.8fr) minmax(10rem, 0.7fr) minmax(11rem, 0.8fr) auto;
+  grid-template-columns: minmax(18rem, 1.8fr) repeat(3, minmax(9rem, 0.7fr)) auto;
   align-items: end;
   gap: 1rem;
   margin-bottom: 1rem;
@@ -309,6 +309,23 @@ th:nth-child(5) {
 
 th:last-child {
   width: 18%;
+}
+
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+}
+
+.sort-button:not(:disabled):hover {
+  color: #173f2c;
 }
 
 td {

@@ -43,6 +43,7 @@ test("shows a loading state and disables request controls", () => {
   expect(screen.getByLabelText("Search employees")).toBeDisabled();
   expect(screen.getByLabelText("Country")).toBeDisabled();
   expect(screen.getByLabelText("Department")).toBeDisabled();
+  expect(screen.getByLabelText("Status")).toBeDisabled();
 });
 
 test("renders employee data and keeps salary precision in the display", async () => {
@@ -55,9 +56,72 @@ test("renders employee data and keeps salary precision in the display", async ()
   expect(screen.getByText("INR 75,000.25")).toBeInTheDocument();
   expect(screen.getByText("1-25")).toBeInTheDocument();
   expect(screen.getByText("50", { selector: ".record-count span" })).toBeInTheDocument();
+  expect(screen.getByRole("columnheader", { name: "Code" })).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+  expect(screen.getByRole("columnheader", { name: "Salary" })).not.toHaveAttribute("aria-sort");
 });
 
-test("sends search, filter, and pagination changes to the backend", async () => {
+test("sorting uses server query parameters, toggles direction, and resets pagination", async () => {
+  const fetchMock = vi.fn((input: string | URL | Request) => {
+    const url = new URL(String(input), "http://localhost");
+    return Promise.resolve(response({ page: Number(url.searchParams.get("page")) }));
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  await screen.findByText("Asha Patel");
+
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+  await waitFor(() => expect(lastQuery(fetchMock).get("page")).toBe("2"));
+
+  fireEvent.click(screen.getByRole("button", { name: "Employee" }));
+  await waitFor(() => expect(lastQuery(fetchMock).get("sort_by")).toBe("name"));
+  expect(lastQuery(fetchMock).get("sort_direction")).toBe("asc");
+  expect(lastQuery(fetchMock).get("page")).toBe("1");
+  expect(screen.getByRole("columnheader", { name: "Employee" })).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Employee" }));
+  await waitFor(() => expect(lastQuery(fetchMock).get("sort_direction")).toBe("desc"));
+  expect(screen.getByRole("columnheader", { name: "Employee" })).toHaveAttribute(
+    "aria-sort",
+    "descending",
+  );
+});
+
+test("status resets pagination and pagination preserves status and sorting", async () => {
+  const fetchMock = vi.fn((input: string | URL | Request) => {
+    const url = new URL(String(input), "http://localhost");
+    return Promise.resolve(response({ page: Number(url.searchParams.get("page")) }));
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  await screen.findByText("Asha Patel");
+
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+  await waitFor(() => expect(lastQuery(fetchMock).get("page")).toBe("2"));
+  fireEvent.change(screen.getByLabelText("Status"), { target: { value: "all" } });
+  await waitFor(() => expect(lastQuery(fetchMock).get("status")).toBe("all"));
+  expect(lastQuery(fetchMock).get("page")).toBe("1");
+
+  fireEvent.click(screen.getByRole("button", { name: "Job title" }));
+  await waitFor(() => expect(lastQuery(fetchMock).get("sort_by")).toBe("job_title"));
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+  await waitFor(() => expect(lastQuery(fetchMock).get("page")).toBe("2"));
+  expect(lastQuery(fetchMock).get("status")).toBe("all");
+  expect(lastQuery(fetchMock).get("sort_by")).toBe("job_title");
+  expect(lastQuery(fetchMock).get("sort_direction")).toBe("asc");
+
+  fireEvent.click(screen.getByRole("button", { name: "Previous page" }));
+  await waitFor(() => expect(lastQuery(fetchMock).get("page")).toBe("1"));
+  expect(lastQuery(fetchMock).get("status")).toBe("all");
+  expect(lastQuery(fetchMock).get("sort_by")).toBe("job_title");
+});
+
+test("sorting composes with search, country, department, and status", async () => {
   const fetchMock = vi.fn((input: string | URL | Request) => {
     const url = new URL(String(input), "http://localhost");
     const page = Number(url.searchParams.get("page"));
@@ -79,13 +143,40 @@ test("sends search, filter, and pagination changes to the backend", async () => 
   fireEvent.submit(screen.getByLabelText("Search employees").closest("form")!);
   await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain("search=asha"));
 
-  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
-  await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain("page=2"));
+  fireEvent.change(screen.getByLabelText("Status"), { target: { value: "all" } });
+  await waitFor(() => expect(lastQuery(fetchMock).get("status")).toBe("all"));
+  fireEvent.click(screen.getByRole("button", { name: "Country" }));
+  await waitFor(() => expect(lastQuery(fetchMock).get("sort_by")).toBe("country"));
 
-  const finalUrl = String(fetchMock.mock.lastCall?.[0]);
-  expect(finalUrl).toContain("page_size=25");
-  expect(finalUrl).toContain("country=IN");
-  expect(finalUrl).toContain("department=Engineering");
+  const finalQuery = lastQuery(fetchMock);
+  expect(finalQuery.get("page")).toBe("1");
+  expect(finalQuery.get("page_size")).toBe("25");
+  expect(finalQuery.get("search")).toBe("asha");
+  expect(finalQuery.get("country")).toBe("IN");
+  expect(finalQuery.get("department")).toBe("Engineering");
+  expect(finalQuery.get("status")).toBe("all");
+  expect(finalQuery.get("sort_by")).toBe("country");
+  expect(finalQuery.get("sort_direction")).toBe("asc");
+});
+
+test("shows the empty state when no inactive employees match", async () => {
+  const fetchMock = vi.fn((input: string | URL | Request) => {
+    const url = new URL(String(input), "http://localhost");
+    return Promise.resolve(
+      url.searchParams.get("status") === "inactive"
+        ? response({ items: [], total: 0, total_pages: 0 })
+        : response(),
+    );
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+  await screen.findByText("Asha Patel");
+
+  fireEvent.change(screen.getByLabelText("Status"), { target: { value: "inactive" } });
+
+  expect(await screen.findByText("No employees found")).toBeInTheDocument();
+  expect(lastQuery(fetchMock).get("status")).toBe("inactive");
+  expect(screen.getAllByRole("button", { name: "Clear filters" })).toHaveLength(2);
 });
 
 test("shows an empty state for a successful query without matches", async () => {
@@ -113,3 +204,7 @@ test("shows a retryable error when the backend request fails", async () => {
   expect(await screen.findByText("Asha Patel")).toBeInTheDocument();
   expect(fetchMock).toHaveBeenCalledTimes(2);
 });
+
+function lastQuery(fetchMock: ReturnType<typeof vi.fn>): URLSearchParams {
+  return new URL(String(fetchMock.mock.lastCall?.[0]), "http://localhost").searchParams;
+}
