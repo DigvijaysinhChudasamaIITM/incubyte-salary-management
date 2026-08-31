@@ -31,7 +31,7 @@
       "destination": { "service": "backend" }
     },
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "destination": { "service": "frontend" }
     }
   ]
