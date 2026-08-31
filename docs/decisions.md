@@ -112,7 +112,7 @@ The product explicitly targets 10,000 employees. Loading every employee into the
 
 ## D007 — No Product AI Feature Without Requirement
 
-**Status:** Accepted pending clarification
+**Status:** Accepted
 
 ### Decision
 
@@ -120,9 +120,9 @@ Do not add an LLM, RAG system, vector database, or conversational interface mere
 
 ### Reason
 
-The assessment explicitly requires intentional use of AI during software development but does not explicitly require the resulting product to contain AI functionality.
-
-If Incubyte confirms that natural-language salary querying is required, this decision will be revisited.
+Incubyte confirmed that structured KPI cards, charts, and filters are the expected interface and
+that natural-language/AI querying is optional stretch scope. Product AI is therefore not required
+for the MVP.
 
 ---
 
@@ -254,13 +254,32 @@ build logs or direct route probes rather than speculative application changes.
 
 ---
 
-## Open Decisions
+## D013 - Clarified Employee and Analytics MVP
 
-The following remain intentionally unresolved until clarification is received:
+**Status:** Accepted
 
-* current salary versus compensation history;
-* compensation component model;
-* bulk import/export scope;
-* multi-currency reporting strategy;
-* natural-language querying;
-* authentication/authorization scope.
+### Incubyte-Confirmed Requirements
+
+Deliver server-side employee search, sorting, pagination, view/create/salary-update/deactivation
+workflows, and structured compensation analytics. Preserve native salaries, normalize analytics
+with deterministic seeded exchange rates, exclude inactive employees from analytics by default,
+and physically delete no employee. History, compensation components, bulk Excel import, required
+natural-language querying, authentication, SSO, and RBAC are outside the MVP.
+
+### Engineering Decisions
+
+Use USD as the base reporting currency; Incubyte required a common currency but did not select USD.
+Represent deactivation with `is_active`, retain identifier uniqueness across inactive rows, use
+country as the regional grain, keep sorting server-side, and expose inactive records through an
+explicit status filter. The complete directory row satisfies record viewing for P0; a dedicated
+detail endpoint/screen is deferred until it supports information or actions not already present.
+Salary edits change amount only and preserve native currency; deactivation is idempotent, while
+reactivation is excluded because Incubyte did not request it.
+
+### Reason and Trade-offs
+
+These choices satisfy the confirmed workflows with the fewest new concepts and keep current-payroll
+analytics accurate. Seeded rates are deterministic but become stale and are unsuitable for live
+financial settlement. USD normalization is comparative reporting, not payroll accounting. Omitting
+authentication is acceptable only under the confirmed already-authorized internal-user assumption;
+SSO/RBAC is required future hardening for broader production access.

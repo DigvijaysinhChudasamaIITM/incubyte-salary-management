@@ -1,7 +1,7 @@
 # Current System Design
 
-This document describes the architecture implemented so far. It intentionally excludes
-features that depend on Incubyte's pending clarifications.
+This document distinguishes the verified browsing foundation from the target architecture for
+Incubyte's now-confirmed MVP. The target sections are plans, not claims about current production.
 
 ## System and Request Flow
 
@@ -113,14 +113,87 @@ owns `/` and frontend paths, while FastAPI owns `/api/*`, `/health`, and `/ready
 As with any serverless deployment, the first request after inactivity may experience a cold start;
 the readiness probe distinguishes application availability from database connectivity.
 
-## Pending Product Decisions
+## Confirmed MVP Architecture Plan
 
-The following remain intentionally unresolved pending Incubyte's answers:
+### Data Model and Migration
 
-- current salary versus salary history;
-- compensation components and bulk import/export;
-- local-currency reporting versus normalization and exchange rates;
-- examples and form of organizational compensation questions, including any natural-language UI;
-- authentication and authorization expectations.
+- Keep `employees.salary_amount` and `employees.currency` as the native-currency source of truth.
+- Add non-null `employees.is_active`, backfill existing rows to `true`, and index active-state paths
+  used by directory and analytics queries. Never physically delete an employee in the MVP.
+- Preserve employee-code and email uniqueness across inactive records.
+- Add `exchange_rates(currency_code, rate_to_usd, effective_date)` using decimal-safe precision,
+  including USD at `1`. The deterministic seed owns the fixed dated rates; no network call or
+  runtime refresh is needed.
+- Apply one Alembic revision that adds/backfills active state and creates the exchange-rate table,
+  then extend the seed command to verify the complete employee and rate sets. Production migration
+  and seeding remain explicit operator actions.
 
-The current slice does not implement or silently decide any of these behaviors.
+USD is an engineering choice, not Incubyte guidance: Incubyte required a common reporting currency
+and gave USD or INR only as examples. Country is the MVP regional comparison grain, avoiding a
+second geographic taxonomy until one is required.
+
+`currency_code` is the exchange-rate primary key, so exactly one seeded rate exists per supported
+currency. `rate_to_usd` means `1` unit of that currency equals `rate_to_usd` USD. Rates use
+`NUMERIC(20,10)`/`Decimal`, never floating point. Conversion and aggregation retain full available
+decimal precision; only final API display/reporting amounts are rounded to two USD decimal places.
+
+### API and Query Model
+
+- Extend `GET /api/employees` with allowlisted `sort_by`, `sort_direction`, and `status` parameters;
+  sorting, filtering, and pagination remain one stable server-side query.
+- Add `POST /api/employees`, `PATCH /api/employees/{employee_code}/salary`, and idempotent
+  `POST /api/employees/{employee_code}/deactivate`. Deactivation sets `is_active=false`; it does
+  not issue SQL `DELETE`.
+- Keep directory responses sufficient for viewing the complete MVP record. A separate detail
+  endpoint is deferred because it would duplicate the same fields without a distinct workflow.
+- Add `GET /api/analytics/payroll` for total normalized payroll, department/country breakdowns and
+  extrema, plus `GET /api/analytics/roles/{job_title}` for average and P50 by country. Optional
+  country/department/job-title filters compose in SQL; inactive employees are excluded unless an
+  explicit `include_inactive=true` is supplied.
+
+Allowed sort fields are `employee_code`, `name`, `country`, `department`, and `job_title`, in
+ascending or descending order. Native salary is deliberately excluded because amounts in different
+currencies are not directly comparable. Every non-code sort appends `employee_code ASC` as a unique
+tie-breaker, keeping page boundaries stable; code sorting is already unique.
+
+Create validates positive salary and requires a currency present in `exchange_rates`. Employee code
+and email conflicts, including conflicts with inactive rows, return HTTP `409`; validation failures
+return `422`. Salary update accepts only a new positive `salary_amount`, retains the employee's
+native currency, and creates no history row. Repeated deactivation returns the same inactive result
+without another state transition. Reactivation is not an Incubyte-requested workflow and is outside
+P0 rather than being inferred.
+
+Normalization multiplies each native salary by its seeded `rate_to_usd` and rounds only at the API
+presentation boundary. Aggregates use decimal database expressions. Missing rates fail explicitly
+rather than silently treating currencies as equivalent. For the approximately 10,000-record MVP,
+P50 is calculated with exact Decimal arithmetic over a filtered, database-sorted salary projection;
+this avoids divergent percentile behavior between SQLite tests and PostgreSQL production.
+
+Payroll breakdown entries include normalized totals and the response identifies the highest and
+lowest department and country from those same arrays; no separate extrema endpoint is needed. P50
+for cross-country role comparison is calculated over each employee's normalized USD value. With no
+matching employees, analytics return HTTP `200`, a zero total, empty breakdown arrays, and empty
+role statistics. A missing rate aborts the calculation—no partial or unconverted total is returned—
+with a structured `503 exchange_rate_unavailable` response.
+
+### Frontend Workflows
+
+- Enhance the directory with sortable headings, active/inactive filtering, create, edit-salary,
+  and confirmation-based deactivate dialogs while preserving current search/filter/page behavior.
+- Treat the existing complete directory row as the P0 record view; do not add a detail route yet.
+- Add a dashboard with top-level USD KPIs, department/country breakdown charts or tables, role P50
+  and average comparisons, extrema, and useful filters. Clearly label native versus normalized USD.
+- Keep relative `/api` requests and the current same-origin deployment; authentication UI is absent.
+
+### Implementation Sequence
+
+1. Migration, model, exchange-rate seed, and constraint tests.
+2. Active-aware repository queries, server sorting, create/update/deactivate services, and APIs.
+3. Normalized analytics queries and API contracts, including P50 and inactive-default behavior.
+4. Directory management workflows, then the structured analytics dashboard.
+5. Acceptance tests, fresh migration/seed verification, and production-safe rollout checks.
+
+Authentication, SSO/RBAC, reactivation, history, compensation components, bulk Excel import, live
+FX, and required natural-language querying are deliberately excluded. Auth becomes a production
+prerequisite before exposing employee-management writes beyond the assumed authorized internal
+environment.

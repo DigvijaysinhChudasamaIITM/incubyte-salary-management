@@ -41,7 +41,8 @@ Potential features considered included authentication, salary history, advanced 
 
 Only functionality justified by the problem statement will be included in the mandatory scope.
 
-Features that materially depend on unanswered product requirements remain deferred until clarification is received.
+Features that depended on unanswered product requirements were deferred at this stage. Incubyte's
+later response is recorded in Entry 013 and now defines the finalized MVP.
 
 In particular, no LLM-based product capability will be implemented simply to demonstrate AI experience.
 
@@ -63,7 +64,9 @@ AI highlighted risks associated with:
 
 Salary values will use decimal-safe representations.
 
-Cross-currency aggregation remains pending clarification rather than silently applying an arbitrary conversion policy.
+Cross-currency aggregation was deferred at this stage rather than silently applying an arbitrary
+conversion policy. Incubyte later required deterministic normalization; USD was then selected as
+an explicit engineering decision, not attributed to Incubyte.
 
 ---
 
@@ -87,7 +90,7 @@ For implementation work:
 **Problem**
 
 Establish reproducible backend and frontend quality gates without making product
-assumptions while Incubyte's clarifications remain pending.
+assumptions while Incubyte's clarifications were pending.
 
 **AI Assistance**
 
@@ -112,7 +115,7 @@ build were run for the frontend. Dependency installation reported no known vulne
 **Problem**
 
 Add relational employee data, deterministic assessment data, and scalable browsing without
-deciding any compensation-history, currency-conversion, authentication, or AI behavior.
+prematurely deciding compensation-history, currency-conversion, authentication, or AI behavior.
 
 **AI Assistance**
 
@@ -123,7 +126,7 @@ seed generation strategy, and behavior-focused repository/service/API test cases
 
 The model was kept deliberately small. Salary uses `Decimal`/`NUMERIC(14,2)`. Seed reruns
 no-op only for a complete deterministic dataset and reject partial data. Broader compensation
-features remain deferred pending Incubyte's answers.
+features were deferred until Incubyte answered the product questions.
 
 **Verification**
 
@@ -318,3 +321,40 @@ filters, empty results, salary/currency presentation, and server-side pagination
 pages in both directions were manually verified. This sequence reinforced that production logs
 and observable routes should drive deployment fixes rather than speculative changes across
 application layers.
+
+---
+
+## Entry 013 - Incubyte Clarification and Final MVP Plan
+
+**Problem**
+
+Four product boundaries had deliberately remained unresolved: employee-management depth,
+compensation questions, cross-currency reporting, and authentication expectations.
+
+**AI Assistance**
+
+AI compared Incubyte's authoritative response with the current production slice, removed obsolete
+pending language, identified missing model/API/UI/analytics capabilities, and drafted an acceptance
+matrix and implementation sequence. It also challenged whether a dedicated employee detail page,
+a region taxonomy, live FX, or database-specific median SQL were necessary for this MVP.
+
+**Incubyte-Confirmed Requirements**
+
+The P0 includes server-side search, sorting and pagination; employee view/create/salary-update and
+record-preserving deactivation; structured compensation dashboards; native salary currencies;
+seeded exchange rates and common-currency analytics; and active-only analytics by default. History,
+compensation components, bulk Excel import, required natural-language querying, authentication,
+SSO, and RBAC are excluded.
+
+**Human Engineering Decisions**
+
+USD is the reporting currency, country is the regional grain, `is_active` represents deactivation,
+identifiers remain unique across inactive records, sorting stays server-side, and the complete
+directory row satisfies P0 viewing without a separate detail endpoint. Exact P50 is computed over
+a filtered Decimal projection for consistent local and production behavior. These choices are
+explicitly documented as candidate-owned decisions rather than attributed to Incubyte.
+
+**Verification**
+
+Documentation was checked against the current schema, API, repository, and UI so planned work is
+not presented as implemented. No product or deployment code was changed during this planning phase.

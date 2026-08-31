@@ -1,114 +1,52 @@
-# Salary Management — Requirements
+# Salary Management - Finalized MVP Requirements
 
-**Version:** 0.1
-**Status:** Provisional — awaiting clarification on selected product requirements
+**Version:** 1.0
+**Status:** Confirmed from Incubyte clarification
 
-## Goal
+## Goal and User
 
-Build a web-based salary management application for ACME's HR Manager to efficiently manage compensation information for an organization of approximately 10,000 employees distributed across multiple countries.
+Provide one already-authorized internal HR Manager with a reliable employee directory and
+structured compensation insights for approximately 10,000 multi-country employees.
 
-The application should replace tedious spreadsheet-driven salary management with a clear, reliable, searchable, and maintainable software workflow while enabling HR to derive useful information about how employees are compensated.
+## Incubyte-Confirmed P0 Scope
 
-## Primary User
+- Search employees; sort, filter, and paginate on the server.
+- View and create employee records, update salary, and deactivate employees without physical
+  deletion.
+- Retain salary in each employee's native currency.
+- Seed 10,000 synthetic employees and deterministic exchange rates; no live FX integration.
+- Provide KPI/dashboard analytics for normalized global payroll, department/country breakdowns,
+  average and median (P50) salary for a role across regions, and highest/lowest-paying departments
+  or countries, with useful interactive filters.
+- Exclude inactive employees from analytics by default, with explicit inclusion where useful.
+- Use decimal-safe financial values, persistent relational storage, and meaningful automated tests.
 
-**HR Manager**
+## Engineering/Product Decisions (Not Incubyte Requirements)
 
-The initial product is designed around the workflows and information needs of an HR Manager rather than employee self-service.
+- **Reporting currency:** USD, selected as a neutral global comparison basis. One unit of local
+  currency multiplied by a seeded `rate_to_usd` produces its USD value.
+- **Deactivation:** add `is_active`; never delete an employee row. Employee code and email remain
+  unique across active and inactive records.
+- **Directory defaults:** show active employees, with an explicit status filter for inactive/all.
+- **Sorting:** execute against an allowlist on the server with employee code as a stable tie-breaker.
+- **Regional grain:** use country as the MVP region grouping; no separate region taxonomy is needed.
+- **View workflow:** the directory row satisfies P0 viewing because it exposes the complete MVP
+  record. Use focused create, salary-edit, and deactivate dialogs; defer a dedicated detail page
+  until a detail-only workflow exists.
+- **Write invariants:** codes/emails stay unique across inactive records; salaries stay positive;
+  new currencies require a seeded rate; salary update changes amount only; deactivation is
+  idempotent. Reactivation and salary history are not part of P0.
 
-## Core Scope
+## Explicit Exclusions
 
-The initial application will provide:
+Salary revision history; employee reactivation; bonuses, taxes, allowances, and other compensation
+components; bulk Excel import; payroll execution; live FX APIs; required natural-language/AI
+querying; authentication, SSO, and RBAC. The MVP assumes one authorized HR Manager; production
+identity and access controls remain future work.
 
-* storage and retrieval of employee compensation information;
-* support for approximately 10,000 seeded employees;
-* searchable and filterable employee salary data;
-* paginated access to employee records;
-* viewing of employee compensation information;
-* modification of salary information subject to validation;
-* useful aggregate compensation information for HR;
-* a React-based web interface;
-* an API/backend service;
-* persistent relational storage;
-* deterministic seed data;
-* meaningful automated tests covering core behaviour.
+## Acceptance Summary
 
-## Compensation Data
-
-Salary values will be represented using decimal-safe financial types rather than floating-point arithmetic.
-
-Employees may belong to different countries and currencies.
-
-The precise treatment of cross-currency organization-wide analytics is pending clarification from Incubyte.
-
-## Product Principles
-
-The product should prioritize:
-
-* correctness;
-* clear HR workflows;
-* fast discovery of relevant employee information;
-* understandable compensation insights;
-* safe editing of salary data;
-* predictable validation and error behaviour;
-* maintainability over unnecessary architectural complexity.
-
-## Explicitly Out of Scope for the Initial Submission
-
-Unless clarification from Incubyte changes the requirement, the following are deliberately excluded:
-
-* payroll execution or bank transfers;
-* income-tax calculation;
-* statutory payroll processing;
-* payslip generation;
-* attendance management;
-* leave management;
-* benefits administration;
-* recruitment functionality;
-* employee self-service;
-* enterprise SSO integration;
-* complex role-based access-control infrastructure;
-* distributed/microservice architecture;
-* event streaming or message queues;
-* AI/LLM functionality added solely for demonstration purposes.
-
-These are adjacent HR/payroll concerns but are not necessary to solve the stated salary-management problem and would increase complexity without corresponding product value.
-
-## Pending Clarifications
-
-The following questions have been sent to Incubyte:
-
-1. Whether “manage salary data” primarily means managing current employee compensation or also requires salary history, compensation components, and/or bulk import/export.
-2. Representative examples of the questions HR should be able to answer about organizational compensation, including whether a natural-language/AI interface is expected.
-3. Whether multi-country salaries should remain in local currencies or be normalized to a common reporting currency.
-4. Whether authentication/authorization must be implemented or whether an authenticated HR Manager context may be assumed.
-
-These questions may alter feature scope but do not prevent project setup, testing infrastructure, architecture preparation, or implementation of universally required employee-management capabilities.
-
-## Non-Functional Expectations
-
-The system should:
-
-* remain responsive with 10,000 employee records;
-* avoid transferring the entire employee dataset to the browser unnecessarily;
-* use appropriate database indexes for common lookup/filter operations;
-* validate inputs on the backend regardless of frontend validation;
-* use clear HTTP semantics and error responses;
-* preserve financial precision;
-* have fast, deterministic, understandable automated tests;
-* be reproducible from documented setup instructions;
-* be deployable as a fully functional web application.
-
-## Success Criteria
-
-A reviewer should be able to:
-
-1. clone the repository;
-2. follow the README successfully;
-3. initialize the database;
-4. seed 10,000 employees;
-5. start the backend and frontend;
-6. browse/search/filter employee compensation data;
-7. perform supported salary-management operations;
-8. obtain useful compensation insights;
-9. run the automated test suite successfully;
-10. understand the major engineering decisions and trade-offs from the repository artifacts.
+A reviewer can seed 10,000 records; browse, search, filter, and sort stable server-side pages;
+create an employee; update salary; deactivate without data loss; include inactive records
+explicitly; and use a structured dashboard to answer every confirmed compensation question in USD.
+All operations validate on the backend, preserve decimal precision, and pass automated tests.

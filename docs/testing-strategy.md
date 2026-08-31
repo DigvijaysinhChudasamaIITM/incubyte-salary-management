@@ -70,3 +70,25 @@ production Neon connectivity without exposing connection details.
 GitHub Actions runs backend Ruff and pytest checks plus frontend Vitest, ESLint, and
 production-build checks on every push and pull request. The backend and frontend run as
 independent jobs so failures remain easy to locate and both stacks can execute in parallel.
+
+## Confirmed MVP Acceptance Matrix
+
+| Capability | Required evidence |
+| --- | --- |
+| Browse/view | Complete directory fields; stable forward/back pages; active/inactive/all status views |
+| Search/filter/sort | Server allowlist and directions; code-ascending tie-breaker keeps page membership stable |
+| Create | Positive salary and seeded currency persist; duplicate active/inactive code or email returns `409`; invalid input returns `422` |
+| Update salary | Amount alone changes and stays positive; native currency and other fields remain; no history row exists |
+| Deactivate | No SQL delete; repeated requests return the same inactive result; default views exclude it; no reactivate workflow |
+| Exchange rates | One row per currency; `1 local = rate_to_usd USD`; Decimal precision, USD=`1`, repeat safety, no float path |
+| Global analytics | Active-only full-precision USD total is rounded only for output; explicit inactive inclusion is testable |
+| Breakdowns/extrema | One response contains department/country arrays and their highest/lowest entries under filters and ties |
+| Role analytics | Average and P50 use normalized USD; odd/even fixtures and native conversion are correct |
+| Empty/invalid analytics | No matches return `200` with zero/empty structures; missing FX returns structured `503` and no partial data |
+| Frontend workflows | Create, salary edit, deactivate confirmation, sorting, status filter, KPI/chart filters, empty/error states |
+| Security boundary | No auth UI or implied protection; documentation states the authorized-HR assumption and future SSO/RBAC |
+
+Every write requires service/API, persistence, validation, rollback, and UI interaction tests.
+Analytics fixtures must include multiple currencies and inactive employees so incorrect inclusion or
+unconverted aggregation cannot pass accidentally. Fresh SQLite and PostgreSQL-compatible migration
+checks must prove active-state backfill and deterministic exchange-rate seeding.

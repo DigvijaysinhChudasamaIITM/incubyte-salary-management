@@ -9,10 +9,9 @@ Implementation in progress.
 
 **Live demo:** https://incubyte-salary-management-eight.vercel.app
 
-Product requirements and engineering decisions are documented under `/docs`.
-
-Some product behaviours remain provisional while clarification from Incubyte
-is pending.
+Incubyte-confirmed MVP requirements and separate engineering decisions are documented under
+`/docs`. The current live slice is a verified browsing foundation; confirmed CRUD, sorting,
+deactivation, exchange-rate, and compensation-dashboard work is documented but not yet implemented.
 
 ## Prerequisites
 
