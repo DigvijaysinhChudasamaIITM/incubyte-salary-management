@@ -256,7 +256,9 @@ test("creates an employee from supported currencies and refreshes the directory"
   render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
 
-  fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
+  const addEmployee = screen.getByRole("button", { name: "Add employee" });
+  addEmployee.focus();
+  fireEvent.click(addEmployee);
   const dialog = await screen.findByRole("dialog", { name: "Add employee" });
   await waitFor(() => expect(within(dialog).getByLabelText("Currency")).toBeEnabled());
   fillCreateForm(dialog);
@@ -286,12 +288,33 @@ test("opens with keyboard focus and closes with Escape", async () => {
   render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
 
-  fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
+  const addEmployee = screen.getByRole("button", { name: "Add employee" });
+  addEmployee.focus();
+  fireEvent.click(addEmployee);
   const dialog = await screen.findByRole("dialog");
 
   expect(within(dialog).getByLabelText("Employee code")).toHaveFocus();
   fireEvent.keyDown(dialog, { key: "Escape" });
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(addEmployee).toHaveFocus();
+});
+
+test("keeps keyboard focus inside the create dialog", async () => {
+  vi.stubGlobal("fetch", createFormFetch(jsonResponse(asha, 201)));
+  render(<App initialView="employees" />);
+  await screen.findByText("Asha Patel");
+  fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
+  const dialog = await screen.findByRole("dialog");
+  const close = within(dialog).getByRole("button", { name: "Close add employee form" });
+  const submit = within(dialog).getByRole("button", { name: "Add employee" });
+
+  submit.focus();
+  fireEvent.keyDown(dialog, { key: "Tab" });
+  expect(close).toHaveFocus();
+
+  close.focus();
+  fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+  expect(submit).toHaveFocus();
 });
 
 test("prevents double submission while employee creation is pending", async () => {

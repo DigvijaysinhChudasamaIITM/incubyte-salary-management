@@ -7,6 +7,7 @@ import {
   EmployeeApiError,
   EmployeeCreateInput,
 } from "./api/employees";
+import { trapDialogFocus, useDialogFocusReturn } from "./dialogAccessibility";
 
 const COUNTRIES = [
   ["CA", "Canada"],
@@ -36,6 +37,7 @@ export function EmployeeCreateDialog({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState("");
   const submissionActive = useRef(false);
+  useDialogFocusReturn();
 
   function close() {
     if (!submissionActive.current) onClose();
@@ -43,6 +45,7 @@ export function EmployeeCreateDialog({
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") close();
+    else trapDialogFocus(event);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {

@@ -7,6 +7,7 @@ import {
   EmployeeApiError,
   updateEmployeeSalary,
 } from "./api/employees";
+import { trapDialogFocus, useDialogFocusReturn } from "./dialogAccessibility";
 
 type DialogProps = {
   employee: Employee;
@@ -129,12 +130,15 @@ function MutationDialog({ title, closeLabel, submitting, onClose, children }: {
   onClose: () => void;
   children: ReactNode;
 }) {
+  useDialogFocusReturn();
+
   function close() {
     if (!submitting) onClose();
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") close();
+    else trapDialogFocus(event);
   }
 
   const titleId = `employee-action-${title.toLowerCase().replaceAll(" ", "-")}`;
