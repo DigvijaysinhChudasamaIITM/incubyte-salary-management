@@ -12,7 +12,7 @@ Implementation in progress.
 Incubyte-confirmed MVP requirements and separate engineering decisions are documented under
 `/docs`. The verified production application includes the directory, server-side sorting/status
 controls, deterministic exchange rates, employee creation, salary editing, and deactivation.
-Compensation analytics APIs are implemented locally; the dashboard remains planned.
+Compensation analytics APIs and the reviewer-facing dashboard are implemented locally.
 
 ## Prerequisites
 

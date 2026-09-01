@@ -324,3 +324,21 @@ all ties as name-sorted arrays and compare full-precision values before rounding
 This preserves the repository boundary, behaves consistently on SQLite and PostgreSQL, and is
 proportionate for 10,000 employees. Database-side aggregation and percentiles remain an optimization
 option if measurement at materially larger scale justifies the added database coupling.
+
+---
+
+## D016 - Use Semantic CSS Data Bars for MVP Analytics
+
+**Status:** Accepted
+
+### Decision
+
+Render the small department/country analytics sets as labelled semantic lists with CSS data bars,
+without adding a charting dependency. Convert rounded API strings to numbers only to calculate bar
+lengths; display the authoritative strings unchanged and perform no business calculations in React.
+
+### Reason and Trade-offs
+
+Five categories per view do not justify a chart runtime or custom SVG framework. Visible values,
+employee counts, headings, and KPI cards remain understandable without color or graphics, while the
+layout stays responsive. A chart library can be reconsidered if richer interaction becomes required.

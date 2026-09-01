@@ -201,8 +201,9 @@ with a structured `503 exchange_rate_unavailable` response.
   read-only during salary edits, deactivation explains record retention, and both workflows refetch
   the current server query after success. Inactive rows expose neither action.
 - Treat the existing complete directory row as the P0 record view; do not add a detail route yet.
-- Add a dashboard with top-level USD KPIs, department/country breakdown charts or tables, role P50
-  and average comparisons, extrema, and useful filters. Clearly label native versus normalized USD.
+- The dashboard opens as the overview and keeps the employee directory one navigation action away.
+  It presents USD KPIs, separate payroll-spend and median-pay views, role P50/average comparisons,
+  server-backed filters, and a clear static assessment-FX disclosure.
 - Keep relative `/api` requests and the current same-origin deployment; authentication UI is absent.
 
 ### Implementation Sequence

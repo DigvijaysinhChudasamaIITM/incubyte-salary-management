@@ -3,12 +3,14 @@ import {
   ArrowUp,
   ChevronLeft,
   ChevronRight,
+  LayoutDashboard,
   Plus,
   Pencil,
   RefreshCw,
   Search,
   SlidersHorizontal,
   UserX,
+  Users,
   X,
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
@@ -23,6 +25,7 @@ import {
   fetchSupportedCurrencies,
 } from "./api/employees";
 import { EmployeeCreateDialog } from "./EmployeeCreateDialog";
+import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import {
   DeactivateEmployeeDialog,
   SalaryUpdateDialog,
@@ -48,7 +51,8 @@ const initialQuery: EmployeeQuery = {
   status: "active",
 };
 
-export function App() {
+export function App({ initialView = "analytics" }: { initialView?: "analytics" | "employees" }) {
+  const [view, setView] = useState<"analytics" | "employees">(initialView);
   const [query, setQuery] = useState(initialQuery);
   const [searchDraft, setSearchDraft] = useState("");
   const [data, setData] = useState<EmployeePage | null>(null);
@@ -66,6 +70,7 @@ export function App() {
   } | null>(null);
 
   useEffect(() => {
+    if (view !== "employees") return;
     const controller = new AbortController();
     fetchEmployees(query, controller.signal)
       .then(setData)
@@ -78,7 +83,7 @@ export function App() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [query, reload]);
+  }, [query, reload, view]);
 
   function openCreate() {
     setCreateOpen(true);
@@ -169,13 +174,20 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div className="brand-mark" aria-hidden="true">SM</div>
-        <div>
-          <span className="product-name">Salary Management</span>
-          <span className="workspace-name">HR workspace</span>
+        <div className="brand">
+          <div className="brand-mark" aria-hidden="true">SM</div>
+          <div>
+            <span className="product-name">Salary Management</span>
+            <span className="workspace-name">HR workspace</span>
+          </div>
         </div>
+        <nav className="app-navigation" aria-label="Primary navigation">
+          <button type="button" aria-current={view === "analytics" ? "page" : undefined} onClick={() => setView("analytics")}><LayoutDashboard size={16} aria-hidden="true" />Overview</button>
+          <button type="button" aria-current={view === "employees" ? "page" : undefined} onClick={() => setView("employees")}><Users size={16} aria-hidden="true" />Employees</button>
+        </nav>
       </header>
 
+      {view === "analytics" ? <AnalyticsDashboard /> : <>
       <main>
         <div className="page-heading">
           <div>
@@ -336,6 +348,7 @@ export function App() {
           onCompleted={employeeMutationCompleted}
         />
       )}
+      </>}
     </div>
   );
 }

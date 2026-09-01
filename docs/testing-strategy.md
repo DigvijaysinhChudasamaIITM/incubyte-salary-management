@@ -85,7 +85,7 @@ independent jobs so failures remain easy to locate and both stacks can execute i
 | Breakdowns/extrema | Department/country totals, averages, and P50 distinguish spend from median-pay extrema under filters and ties |
 | Role analytics | Average and P50 use normalized USD; odd/even fixtures and native conversion are correct |
 | Empty/invalid analytics | No matches return `200` with zero/empty structures; missing FX returns structured `503` and no partial data |
-| Frontend workflows | Create, salary edit, deactivate confirmation, sorting, status filter, KPI/chart filters, empty/error states |
+| Frontend workflows | Create, salary edit, deactivate confirmation, sorting/status, overview navigation, server-backed analytics filters, role comparison, loading/empty/retry states |
 | Security boundary | No auth UI or implied protection; documentation states the authorized-HR assumption and future SSO/RBAC |
 
 Every write requires service/API, persistence, validation, rollback, and UI interaction tests.

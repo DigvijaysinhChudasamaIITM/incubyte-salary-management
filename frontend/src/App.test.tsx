@@ -37,7 +37,7 @@ function response(page: Partial<EmployeePage> = {}): Response {
 test("shows a loading state and disables request controls", () => {
   vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
 
-  render(<App />);
+  render(<App initialView="employees" />);
 
   expect(screen.getByRole("status")).toHaveTextContent("Loading employees");
   expect(screen.getByLabelText("Search employees")).toBeDisabled();
@@ -49,7 +49,7 @@ test("shows a loading state and disables request controls", () => {
 test("renders employee data and keeps salary precision in the display", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response()));
 
-  render(<App />);
+  render(<App initialView="employees" />);
 
   expect(await screen.findByText("Asha Patel")).toBeInTheDocument();
   expect(screen.getByText("asha@example.com")).toBeInTheDocument();
@@ -63,13 +63,45 @@ test("renders employee data and keeps salary precision in the display", async ()
   expect(screen.getByRole("columnheader", { name: "Salary" })).not.toHaveAttribute("aria-sort");
 });
 
+test("opens on Overview and keeps employee workflows one click away", async () => {
+  const analyticsResponse = jsonResponse({
+    reporting_currency: "USD",
+    employee_count: 0,
+    total_payroll: "0.00",
+    filters: { country: null, department: null, job_title: null, include_inactive: false },
+    department_breakdown: [],
+    country_breakdown: [],
+    highest_payroll_departments: [],
+    lowest_payroll_departments: [],
+    highest_payroll_countries: [],
+    lowest_payroll_countries: [],
+    highest_median_departments: [],
+    lowest_median_departments: [],
+    highest_median_countries: [],
+    lowest_median_countries: [],
+  });
+  const fetchMock = vi.fn((input: string | URL | Request) => Promise.resolve(
+    String(input).includes("/api/analytics/payroll") ? analyticsResponse : response(),
+  ));
+  vi.stubGlobal("fetch", fetchMock);
+  render(<App />);
+
+  expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+  fireEvent.click(screen.getByRole("button", { name: "Employees" }));
+
+  expect(await screen.findByText("Asha Patel")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Add employee" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Employees" })).toHaveAttribute("aria-current", "page");
+});
+
 test("sorting uses server query parameters, toggles direction, and resets pagination", async () => {
   const fetchMock = vi.fn((input: string | URL | Request) => {
     const url = new URL(String(input), "http://localhost");
     return Promise.resolve(response({ page: Number(url.searchParams.get("page")) }));
   });
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
 
   fireEvent.click(screen.getByRole("button", { name: "Next page" }));
@@ -98,7 +130,7 @@ test("status resets pagination and pagination preserves status and sorting", asy
     return Promise.resolve(response({ page: Number(url.searchParams.get("page")) }));
   });
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
 
   fireEvent.click(screen.getByRole("button", { name: "Next page" }));
@@ -128,7 +160,7 @@ test("sorting composes with search, country, department, and status", async () =
     return Promise.resolve(response({ page }));
   });
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
 
   fireEvent.change(screen.getByLabelText("Country"), { target: { value: "IN" } });
@@ -169,7 +201,7 @@ test("shows the empty state when no inactive employees match", async () => {
     );
   });
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
 
   fireEvent.change(screen.getByLabelText("Status"), { target: { value: "inactive" } });
@@ -185,7 +217,7 @@ test("shows an empty state for a successful query without matches", async () => 
     vi.fn().mockResolvedValue(response({ items: [], total: 0, total_pages: 0 })),
   );
 
-  render(<App />);
+  render(<App initialView="employees" />);
 
   expect(await screen.findByText("No employees found")).toBeInTheDocument();
 });
@@ -196,7 +228,7 @@ test("shows a retryable error when the backend request fails", async () => {
     .mockRejectedValueOnce(new TypeError("Network error"))
     .mockResolvedValueOnce(response());
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
 
   expect(await screen.findByRole("alert")).toHaveTextContent("Employee data is unavailable");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -221,7 +253,7 @@ test("creates an employee from supported currencies and refreshes the directory"
     return Promise.resolve(response());
   });
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
 
   fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
@@ -251,7 +283,7 @@ test("creates an employee from supported currencies and refreshes the directory"
 
 test("opens with keyboard focus and closes with Escape", async () => {
   vi.stubGlobal("fetch", createFormFetch(jsonResponse(asha, 201)));
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
 
   fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
@@ -273,7 +305,7 @@ test("prevents double submission while employee creation is pending", async () =
     return Promise.resolve(response());
   });
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
   fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
   const dialog = await screen.findByRole("dialog");
@@ -298,7 +330,7 @@ test("shows duplicate conflicts at the relevant field", async () => {
     ),
   );
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
   fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
   const dialog = await screen.findByRole("dialog");
@@ -319,7 +351,7 @@ test("shows backend validation and general create failures without closing the f
     ),
   );
   vi.stubGlobal("fetch", validationFetch);
-  const { unmount } = render(<App />);
+  const { unmount } = render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
   fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
   let dialog = await screen.findByRole("dialog");
@@ -330,7 +362,7 @@ test("shows backend validation and general create failures without closing the f
   unmount();
 
   vi.stubGlobal("fetch", createFormFetch(jsonResponse({ detail: "failure" }, 500)));
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
   fireEvent.click(screen.getByRole("button", { name: "Add employee" }));
   dialog = await screen.findByRole("dialog");
@@ -344,7 +376,7 @@ test("updates native salary and refetches the directory", async () => {
   const updated = { ...asha, salary_amount: "81234.56" };
   const fetchMock = mutationFetch("PATCH", jsonResponse(updated));
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
 
   fireEvent.click(screen.getByRole("button", { name: "Edit salary for Asha Patel" }));
@@ -368,7 +400,7 @@ test("shows salary validation and prevents duplicate salary submissions", async 
   const pendingUpdate = new Promise<Response>((resolve) => { resolveUpdate = resolve; });
   const fetchMock = mutationFetch("PATCH", pendingUpdate);
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
   fireEvent.click(screen.getByRole("button", { name: "Edit salary for Asha Patel" }));
   let dialog = await screen.findByRole("dialog");
@@ -403,7 +435,7 @@ test("confirms deactivation, prevents duplicate submission, and refetches", asyn
   const pendingDeactivate = new Promise<Response>((resolve) => { resolveDeactivate = resolve; });
   const fetchMock = mutationFetch("POST", pendingDeactivate);
   vi.stubGlobal("fetch", fetchMock);
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
   fireEvent.click(screen.getByRole("button", { name: "Deactivate Asha Patel" }));
   const dialog = await screen.findByRole("dialog", { name: "Deactivate employee" });
@@ -423,7 +455,7 @@ test("confirms deactivation, prevents duplicate submission, and refetches", asyn
 
 test("keeps deactivation errors visible without closing the dialog", async () => {
   vi.stubGlobal("fetch", mutationFetch("POST", jsonResponse({ detail: "failure" }, 500)));
-  render(<App />);
+  render(<App initialView="employees" />);
   await screen.findByText("Asha Patel");
   fireEvent.click(screen.getByRole("button", { name: "Deactivate Asha Patel" }));
   const dialog = await screen.findByRole("dialog");
@@ -437,7 +469,7 @@ test("keeps deactivation errors visible without closing the dialog", async () =>
 
 test("does not expose mutation actions for an inactive employee", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ items: [{ ...asha, is_active: false }] })));
-  render(<App />);
+  render(<App initialView="employees" />);
 
   expect(await screen.findByText("Inactive")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Edit salary for/ })).not.toBeInTheDocument();

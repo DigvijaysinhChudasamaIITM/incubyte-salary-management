@@ -413,3 +413,29 @@ evidence. USD remains the documented engineering-selected reporting currency.
 
 Focused analytics tests and the full backend suite verify API contracts and calculation behavior.
 No schema, frontend, deployment, or production-data changes are part of this slice.
+
+---
+
+## Entry 016 - Compensation Analytics Dashboard
+
+**Problem**
+
+Turn the deployed analytics contracts into a reviewer-facing HR overview without recalculating
+money in the browser or disrupting employee-management workflows.
+
+**AI Assistance**
+
+AI mapped the response fields into distinct spend and median-pay sections, added server-backed
+filters and role comparison, designed loading/refetch/retry/empty states, and added user-observable
+frontend tests for analytics, navigation, and preserved directory access.
+
+**Human Decision**
+
+Open on Overview, keep Employees one click away, and use semantic CSS data bars instead of adding a
+chart dependency. Backend monetary strings remain authoritative; numeric conversion is limited to
+visual bar proportions. Static seeded FX limitations are prominent in the interface.
+
+**Verification**
+
+Vitest, ESLint, and the TypeScript/Vite production build cover the frontend slice. Backend code,
+database schema, deployment configuration, and production data are unchanged.
