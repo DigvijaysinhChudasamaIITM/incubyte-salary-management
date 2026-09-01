@@ -5,14 +5,35 @@ application supporting approximately 10,000 employees.
 
 ## Status
 
-Implementation in progress.
+MVP complete and production verified.
 
 **Live demo:** https://incubyte-salary-management-eight.vercel.app
 
 Incubyte-confirmed MVP requirements and separate engineering decisions are documented under
 `/docs`. The verified production application includes the directory, server-side sorting/status
 controls, deterministic exchange rates, employee creation, salary editing, and deactivation.
-Compensation analytics APIs and the reviewer-facing dashboard are implemented locally.
+Compensation analytics APIs and the reviewer-facing dashboard are live on the same production
+domain.
+
+## What it does
+
+- Browse, search, filter, sort, and paginate 10,000 employees without loading the directory into
+  the browser.
+- Create employees, update current native salary, and deactivate records without physical deletion.
+- Normalize five native currencies to USD with deterministic assessment FX rates.
+- Show global payroll, department/country spend and median-pay comparisons, and role-level average
+  and P50 analytics through a responsive dashboard.
+
+## Architecture
+
+The modular monolith keeps FastAPI routing, application behavior, SQLAlchemy repositories, and
+relational persistence in separate backend modules. React/Vite consumes same-origin APIs. Production
+uses Vercel Services for the frontend and FastAPI service, with Neon PostgreSQL for persistence.
+
+The fixed FX table makes assessment results reproducible but is not suitable for financial
+settlement. Analytics materialize one filtered compensation projection for portable exact-Decimal
+aggregation at this scale. Authentication, SSO, and RBAC are intentionally excluded under the
+already-authorized internal HR Manager assumption and would be required before broader access.
 
 ## Prerequisites
 
@@ -20,6 +41,13 @@ Compensation analytics APIs and the reviewer-facing dashboard are implemented lo
 - Node.js 22 or newer
 
 ## Local setup
+
+The default local configuration uses SQLite and same-origin-style relative API paths, so no
+environment variables are required. [`.env.example`](.env.example) documents the production
+configuration surface but is not loaded automatically. To configure explicitly, export variables
+in the shell before running commands; for example, set
+`DATABASE_URL=sqlite:///./salary_management.db` from the `backend` directory. Do not copy the
+placeholder Neon URL into a local shell unchanged.
 
 Create the backend environment and install dependencies:
 
@@ -73,6 +101,11 @@ npm test
 npm run lint
 npm run build
 ```
+
+The detailed confirmed requirements, architecture, decisions, testing strategy, and AI-use record
+are in [`docs/requirements.md`](docs/requirements.md), [`docs/design.md`](docs/design.md),
+[`docs/decisions.md`](docs/decisions.md), [`docs/testing-strategy.md`](docs/testing-strategy.md), and
+[`docs/ai-usage.md`](docs/ai-usage.md).
 
 Browse employees at `GET /api/employees`. The endpoint accepts `page`, `page_size` (up to
 100), `search`, `country`, `department`, `status`, `sort_by`, and `sort_direction` query

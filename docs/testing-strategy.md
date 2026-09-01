@@ -2,8 +2,7 @@
 
 The assessment requires fast, deterministic, meaningful tests.
 
-Testing will be implemented incrementally alongside product behaviour rather
-than added only at the end.
+Testing was implemented incrementally alongside product behaviour rather than added only at the end.
 
 ## Test Layers
 
@@ -17,7 +16,7 @@ than added only at the end.
 - Seed tests for exactly 10,000 employees, repeat execution, and conflict safety
 - Frontend interaction tests for loading, salary display, server query construction,
   pagination, empty results, and retryable failures
-- At least one end-to-end HR workflow before submission
+- Production browser verification of the controlled create/update/deactivate lifecycle
 
 ## Principles
 
@@ -58,12 +57,12 @@ infrastructure are deliberately unavailable to repository tests.
 ## Production Verification
 
 The live deployment at https://incubyte-salary-management-eight.vercel.app was manually verified
-after automated checks passed. `/` serves Vite; `/api/health` and `/api/ready` return healthy
-responses; and the employee endpoint returns 25 records with a total of 10,000. Employee-code
-search, country filtering, department filtering, combined filters, the empty state,
-salary/currency formatting, and server-side pagination across multiple pages in both directions
-were exercised through the UI. The successful readiness response and employee queries confirm
-production Neon connectivity without exposing connection details.
+after automated checks passed. `/` serves the Overview dashboard; `/api/health` and `/api/ready`
+return healthy responses; and the active employee total is 10,000. Directory search, filters,
+sorting, empty states, formatting, and bidirectional pagination were exercised through the UI. A
+controlled employee was created, salary-updated, and deactivated; it remains preserved in inactive
+and all views. Payroll KPIs, spend/median charts, composed analytics filters, active/inactive scope,
+and role average/P50 were also verified against Neon without exposing connection details.
 
 ## Continuous Integration
 

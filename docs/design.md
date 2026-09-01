@@ -1,7 +1,7 @@
 # Current System Design
 
-This document distinguishes the verified browsing foundation from the target architecture for
-Incubyte's now-confirmed MVP. The target sections are plans, not claims about current production.
+This document describes the completed, production-verified MVP architecture and its deliberate
+trade-offs.
 
 ## System and Request Flow
 
@@ -44,9 +44,9 @@ only when another behavior or persistence implementation creates a demonstrated 
 
 ## Employee Data
 
-The current employee record contains employee code, name, email, country, department, job title,
-salary amount, currency, and active status. It is deliberately a browsing foundation, not a final
-compensation model.
+The employee record contains employee code, name, email, country, department, job title, salary
+amount, currency, and active status. It is deliberately the complete MVP record rather than a
+detailed compensation-history model.
 
 Salary is represented as Python `Decimal` and database `NUMERIC(14,2)`. Binary floating point is
 not used for storage, seeding, filtering, or API serialization.

@@ -439,3 +439,29 @@ visual bar proportions. Static seeded FX limitations are prominent in the interf
 
 Vitest, ESLint, and the TypeScript/Vite production build cover the frontend slice. Backend code,
 database schema, deployment configuration, and production data are unchanged.
+
+---
+
+## Entry 017 - Final Submission Readiness Audit
+
+**Problem**
+
+Verify the completed MVP from a clean clone, reconcile documentation with production, challenge
+edge cases and architecture boundaries, and assess reviewer readiness without adding features.
+
+**AI Assistance**
+
+AI executed the README flow in isolated Python and Node environments, audited repository/security
+patterns and test coverage, exercised read-only production routes and responsive browser layouts,
+and identified stale completion language plus missing dialog focus containment/restoration.
+
+**Human Decision**
+
+Limit changes to reviewer-facing accuracy, targeted credible edge-case tests, and the concrete
+dialog accessibility defect. Do not refactor the service/entity coupling, add browser-test
+infrastructure, or optimize analytics without evidence that those trade-offs harm the assessment.
+
+**Verification**
+
+Fresh migration and seed runs, full backend/frontend quality suites, production probes, and manual
+browser inspection provide the evidence. All cleanup changes remain uncommitted pending approval.
