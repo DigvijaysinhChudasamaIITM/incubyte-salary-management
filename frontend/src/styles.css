@@ -72,6 +72,7 @@ select:focus-visible {
 
 .app-navigation button {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 0.4rem;
   padding: 0 0.9rem;
@@ -1057,6 +1058,7 @@ td span {
   .app-navigation button {
     flex: 1;
     justify-content: center;
+    padding: 0 0.5rem;
   }
 
   main {
@@ -1076,12 +1078,27 @@ td span {
 
   .analytics-heading,
   .section-heading {
+    width: 100%;
+    min-width: 0;
     align-items: flex-start;
     flex-direction: column;
   }
 
+  .analytics-heading > div,
+  .section-heading > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page-intro {
+    overflow-wrap: anywhere;
+  }
+
   .reporting-note {
+    width: 100%;
+    min-width: 0;
     max-width: none;
+    overflow-wrap: anywhere;
   }
 
   .section-heading > p {
