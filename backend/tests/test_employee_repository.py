@@ -29,11 +29,23 @@ def test_searches_code_name_and_email_case_insensitively(session: Session) -> No
     by_name, _ = repository.list(EmployeeQuery(page=1, page_size=10, search="MORGAN"))
     by_email, _ = repository.list(EmployeeQuery(page=1, page_size=10, search="employee3@"))
     by_wildcard, _ = repository.list(EmployeeQuery(page=1, page_size=10, search="%"))
+    by_single_wildcard, _ = repository.list(EmployeeQuery(page=1, page_size=10, search="_"))
 
     assert [item.employee_code for item in by_code] == ["EMP00001"]
     assert [item.employee_code for item in by_name] == ["EMP00002"]
     assert [item.employee_code for item in by_email] == ["EMP00003"]
     assert by_wildcard == []
+    assert by_single_wildcard == []
+
+
+def test_page_beyond_final_page_is_empty_but_preserves_total(session: Session) -> None:
+    session.add_all(employee(number) for number in range(1, 4))
+    session.commit()
+
+    items, total = EmployeeRepository(session).list(EmployeeQuery(page=3, page_size=2))
+
+    assert items == []
+    assert total == 3
 
 
 def test_combines_country_and_department_filters(session: Session) -> None:

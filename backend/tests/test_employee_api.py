@@ -194,6 +194,23 @@ def test_duplicate_against_inactive_employee_still_conflicts(session: Session) -
     }
 
 
+def test_normalized_case_duplicate_code_and_email_still_conflict(session: Session) -> None:
+    session.add(employee(1))
+    seed_exchange_rates(session)
+    session.commit()
+
+    response = client_for(session).post(
+        "/api/employees",
+        json=create_payload(employee_code="emp00001", email="EMPLOYEE1@EXAMPLE.COM"),
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == {
+        "code": "employee_conflict",
+        "fields": ["employee_code", "email"],
+    }
+
+
 def test_unsupported_currency_returns_structured_validation_error(session: Session) -> None:
     seed_exchange_rates(session)
     session.commit()
@@ -212,6 +229,14 @@ def test_unsupported_currency_returns_structured_validation_error(session: Sessi
 def test_rejects_non_positive_salary(session: Session, salary: str) -> None:
     response = client_for(session).post(
         "/api/employees", json=create_payload(salary_amount=salary)
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_rejects_excessive_salary_precision(session: Session) -> None:
+    response = client_for(session).post(
+        "/api/employees", json=create_payload(salary_amount="12345.678")
     )
 
     assert response.status_code == 422
@@ -315,6 +340,17 @@ def test_salary_update_rejects_non_positive_amount(
 
     response = client_for(session).patch(
         "/api/employees/EMP00001/salary", json={"salary_amount": salary}
+    )
+
+    assert response.status_code == 422
+
+
+def test_salary_update_rejects_excessive_precision(session: Session) -> None:
+    session.add(employee(1))
+    session.commit()
+
+    response = client_for(session).patch(
+        "/api/employees/EMP00001/salary", json={"salary_amount": "80000.001"}
     )
 
     assert response.status_code == 422

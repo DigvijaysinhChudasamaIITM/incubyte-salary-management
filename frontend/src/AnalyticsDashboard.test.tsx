@@ -122,7 +122,7 @@ test("shows an empty payroll state", async () => {
 test("requests role analytics and renders country statistics", async () => {
   const fetchMock = vi.fn((input: string | URL | Request) => Promise.resolve(
     String(input).includes("/roles/")
-      ? jsonResponse({ reporting_currency: "USD", job_title: "Engineer", employee_count: 2, include_inactive: false, countries: [{ country: "IN", employee_count: 2, average_salary: "1500.01", median_salary: "1490.00" }] })
+      ? jsonResponse({ reporting_currency: "USD", job_title: "Senior Engineer", employee_count: 2, include_inactive: false, countries: [{ country: "IN", employee_count: 2, average_salary: "1500.01", median_salary: "1490.00" }] })
       : jsonResponse(payroll),
   ));
   vi.stubGlobal("fetch", fetchMock);
@@ -130,12 +130,12 @@ test("requests role analytics and renders country statistics", async () => {
   await screen.findByText("USD 960,000.00");
 
   const rolePanel = screen.getByRole("heading", { name: "Compare a role across countries" }).closest("section")!;
-  fireEvent.change(within(rolePanel).getByLabelText("Job title"), { target: { value: " Engineer " } });
+  fireEvent.change(within(rolePanel).getByLabelText("Job title"), { target: { value: " Senior Engineer " } });
   fireEvent.click(within(rolePanel).getByRole("button", { name: "Compare role" }));
 
   expect(await within(rolePanel).findByText("USD 1,500.01")).toBeInTheDocument();
   expect(within(rolePanel).getByText("USD 1,490.00")).toBeInTheDocument();
-  expect(String(fetchMock.mock.lastCall?.[0])).toContain("/api/analytics/roles/Engineer");
+  expect(String(fetchMock.mock.lastCall?.[0])).toContain("/api/analytics/roles/Senior%20Engineer");
 });
 
 test("shows a clear zero-match role state", async () => {
