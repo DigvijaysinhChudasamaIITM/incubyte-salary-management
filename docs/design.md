@@ -157,10 +157,13 @@ amount.
   for unknown codes.
 - Keep directory responses sufficient for viewing the complete MVP record. A separate detail
   endpoint is deferred because it would duplicate the same fields without a distinct workflow.
-- Add `GET /api/analytics/payroll` for total normalized payroll, department/country breakdowns and
-  extrema, plus `GET /api/analytics/roles/{job_title}` for average and P50 by country. Optional
-  country/department/job-title filters compose in SQL; inactive employees are excluded unless an
-  explicit `include_inactive=true` is supplied.
+- `GET /api/analytics/payroll` returns total normalized payroll, department/country breakdowns and
+  extrema; optional country, department, and job-title filters compose in the repository query.
+  `GET /api/analytics/roles/{job_title}` returns average and P50 by country. Both exclude inactive
+  employees unless `include_inactive=true` is supplied.
+- Country filters are trimmed and uppercased. Department filters are trimmed and use the directory's
+  case-sensitive exact matching; job-title filters and role paths are trimmed, case-insensitive exact
+  matches. Fuzzy role grouping is outside the MVP.
 
 Allowed sort fields are `employee_code`, `name`, `country`, `department`, and `job_title`, in
 ascending or descending order. Native salary is deliberately excluded because amounts in different
@@ -175,13 +178,16 @@ without another state transition. Reactivation is not an Incubyte-requested work
 P0 rather than being inferred.
 
 Normalization multiplies each native salary by its seeded `rate_to_usd` and rounds only at the API
-presentation boundary. Aggregates use decimal database expressions. Missing rates fail explicitly
-rather than silently treating currencies as equivalent. For the approximately 10,000-record MVP,
-P50 is calculated with exact Decimal arithmetic over a filtered, database-sorted salary projection;
-this avoids divergent percentile behavior between SQLite tests and PostgreSQL production.
+presentation boundary. The repository loads one filtered employee/FX projection; the application
+aggregates and calculates P50 with exact Decimal arithmetic. This portable approach avoids divergent
+percentile behavior between SQLite tests and PostgreSQL production at the approximately 10,000-row
+MVP scale.
 
-Payroll breakdown entries include normalized totals and the response identifies the highest and
-lowest department and country from those same arrays; no separate extrema endpoint is needed. P50
+Payroll breakdown entries include normalized total payroll, average salary, and median/P50 salary.
+Explicit `highest_payroll_*` arrays answer spend questions, while `highest_median_*` and
+`lowest_median_*` arrays use P50 as the less-outlier-sensitive pay-distribution comparison. All ties
+are returned in deterministic name order, and extrema are compared at full precision before display
+rounding; no separate endpoint is needed. P50
 for cross-country role comparison is calculated over each employee's normalized USD value. With no
 matching employees, analytics return HTTP `200`, a zero total, empty breakdown arrays, and empty
 role statistics. A missing rate aborts the calculation—no partial or unconverted total is returned—

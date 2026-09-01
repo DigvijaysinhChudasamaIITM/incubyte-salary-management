@@ -386,3 +386,30 @@ without reactivating a deliberately inactive record.
 Fresh migration and a 10,000-row pre-change migration prove the schema and backfill. Repository,
 service, and API tests cover both directions, stable page ties, status filters, and rejected query
 values. Backend and frontend quality suites verify the expanded response contract.
+
+---
+
+## Entry 015 - Compensation Analytics Backend
+
+**Problem**
+
+Implement the confirmed payroll and role analytics APIs without adding dashboard UI or coupling
+application calculations to SQLAlchemy.
+
+**AI Assistance**
+
+AI traced the FX and repository boundaries, implemented a filtered employee/FX projection and exact
+Decimal aggregation, and added adversarial fixtures that distinguish payroll spend from pay levels,
+plus inactive records, tied extrema, odd/even P50, output rounding, empty results, and missing rates.
+
+**Human Decision**
+
+Keep the MVP implementation portable: calculate aggregates and P50 over one repository projection,
+use median/P50 rather than group payroll total to compare pay distributions, return every tied
+extreme in deterministic name order, and reserve database-native aggregation for future scale
+evidence. USD remains the documented engineering-selected reporting currency.
+
+**Verification**
+
+Focused analytics tests and the full backend suite verify API contracts and calculation behavior.
+No schema, frontend, deployment, or production-data changes are part of this slice.

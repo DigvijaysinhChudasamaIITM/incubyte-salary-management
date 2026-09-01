@@ -49,3 +49,50 @@ class EmployeePageResponse(BaseModel):
 
 class SupportedCurrenciesResponse(BaseModel):
     currencies: list[str]
+
+
+class AnalyticsFiltersResponse(BaseModel):
+    country: str | None
+    department: str | None
+    job_title: str | None
+    include_inactive: bool
+
+
+class PayrollGroupResponse(BaseModel):
+    name: str
+    employee_count: int
+    total_payroll: Decimal
+    average_salary: Decimal
+    median_salary: Decimal
+
+
+class PayrollAnalyticsResponse(BaseModel):
+    reporting_currency: str
+    employee_count: int
+    total_payroll: Decimal
+    filters: AnalyticsFiltersResponse
+    department_breakdown: list[PayrollGroupResponse]
+    country_breakdown: list[PayrollGroupResponse]
+    highest_payroll_departments: list[PayrollGroupResponse]
+    lowest_payroll_departments: list[PayrollGroupResponse]
+    highest_payroll_countries: list[PayrollGroupResponse]
+    lowest_payroll_countries: list[PayrollGroupResponse]
+    highest_median_departments: list[PayrollGroupResponse]
+    lowest_median_departments: list[PayrollGroupResponse]
+    highest_median_countries: list[PayrollGroupResponse]
+    lowest_median_countries: list[PayrollGroupResponse]
+
+
+class RoleCountryStatisticsResponse(BaseModel):
+    country: str
+    employee_count: int
+    average_salary: Decimal
+    median_salary: Decimal
+
+
+class RoleAnalyticsResponse(BaseModel):
+    reporting_currency: str
+    job_title: str
+    employee_count: int
+    include_inactive: bool
+    countries: list[RoleCountryStatisticsResponse]

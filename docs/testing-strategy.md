@@ -82,7 +82,7 @@ independent jobs so failures remain easy to locate and both stacks can execute i
 | Deactivate | No SQL delete; repeated requests return the same inactive result; default views exclude it; no reactivate workflow |
 | Exchange rates | One row per currency; `1 local = rate_to_usd USD`; Decimal precision, USD=`1`, repeat safety, no float path |
 | Global analytics | Active-only full-precision USD total is rounded only for output; explicit inactive inclusion is testable |
-| Breakdowns/extrema | One response contains department/country arrays and their highest/lowest entries under filters and ties |
+| Breakdowns/extrema | Department/country totals, averages, and P50 distinguish spend from median-pay extrema under filters and ties |
 | Role analytics | Average and P50 use normalized USD; odd/even fixtures and native conversion are correct |
 | Empty/invalid analytics | No matches return `200` with zero/empty structures; missing FX returns structured `503` and no partial data |
 | Frontend workflows | Create, salary edit, deactivate confirmation, sorting, status filter, KPI/chart filters, empty/error states |
@@ -90,5 +90,7 @@ independent jobs so failures remain easy to locate and both stacks can execute i
 
 Every write requires service/API, persistence, validation, rollback, and UI interaction tests.
 Analytics fixtures must include multiple currencies and inactive employees so incorrect inclusion or
-unconverted aggregation cannot pass accidentally. Fresh SQLite and PostgreSQL-compatible migration
-checks must prove active-state backfill and deterministic exchange-rate seeding.
+unconverted aggregation cannot pass accidentally. Analytics service/API tests cover multi-FX totals,
+filters, active/all scope, breakdown averages/P50, distinct spend/pay extrema, ties, output rounding, empty results,
+and all-or-nothing missing-rate failure. Fresh SQLite and PostgreSQL-compatible migration checks
+prove active-state backfill and deterministic exchange-rate seeding.

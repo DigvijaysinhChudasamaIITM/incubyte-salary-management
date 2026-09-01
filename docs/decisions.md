@@ -305,3 +305,22 @@ These five currencies exactly cover the deterministic employee dataset. Simple f
 tests and assessment results reproducible. They are static fixtures, not current market prices;
 live or historical FX management remains deliberately out of scope and the values must not be used
 for financial settlement.
+
+---
+
+## D015 - Portable Analytics and Explicit Extrema Ties
+
+**Status:** Accepted
+
+### Decision
+
+Fetch one filtered employee/FX projection through an analytics repository, then use Python
+`Decimal` for normalization, grouping, average, and exact P50. Keep total-payroll extrema explicitly
+named as spend measures and use median/P50 for highest/lowest pay-distribution comparisons. Return
+all ties as name-sorted arrays and compare full-precision values before rounding responses to cents.
+
+### Reason and Trade-offs
+
+This preserves the repository boundary, behaves consistently on SQLite and PostgreSQL, and is
+proportionate for 10,000 employees. Database-side aggregation and percentiles remain an optimization
+option if measurement at materially larger scale justifies the added database coupling.

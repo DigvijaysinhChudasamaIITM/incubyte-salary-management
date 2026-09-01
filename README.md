@@ -10,10 +10,9 @@ Implementation in progress.
 **Live demo:** https://incubyte-salary-management-eight.vercel.app
 
 Incubyte-confirmed MVP requirements and separate engineering decisions are documented under
-`/docs`. The current production slice includes the verified directory, server-side sorting/status
-controls, and deterministic exchange-rate foundation. Employee creation is implemented locally;
-salary editing and deactivation are now also implemented locally. Compensation analytics and the
-dashboard remain planned.
+`/docs`. The verified production application includes the directory, server-side sorting/status
+controls, deterministic exchange rates, employee creation, salary editing, and deactivation.
+Compensation analytics APIs are implemented locally; the dashboard remains planned.
 
 ## Prerequisites
 

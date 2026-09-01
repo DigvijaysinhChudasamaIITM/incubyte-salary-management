@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from salary_management.api.analytics import router as analytics_router
 from salary_management.api.employees import router as employee_router
 from salary_management.api.metadata import router as metadata_router
 from salary_management.config import cors_allowed_origins
@@ -36,6 +37,7 @@ def create_app() -> FastAPI:
             allow_headers=["Accept", "Content-Type"],
         )
     application.include_router(employee_router)
+    application.include_router(analytics_router)
     application.include_router(metadata_router)
     application.add_api_route("/health", health, methods=["GET"], tags=["system"])
     application.add_api_route("/ready", readiness, methods=["GET"], tags=["system"])
