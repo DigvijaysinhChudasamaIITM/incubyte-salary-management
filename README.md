@@ -8,6 +8,7 @@ application supporting approximately 10,000 employees.
 MVP complete and production verified.
 
 **Live demo:** https://incubyte-salary-management-eight.vercel.app
+
 **Video Walkthrough:** [https://incubyte-salary-management-eight.vercel.app](https://drive.google.com/file/d/1BdPV-rx-5d5n0eWRoJLd_JR-9sTQk_Vk/view?usp=sharing)
 
 Incubyte-confirmed MVP requirements and separate engineering decisions are documented under
